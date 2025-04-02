@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { Notification } from './interfaces/notification.interface';

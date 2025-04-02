@@ -38,12 +38,8 @@ export class AuthService {
 	) {}
 
 	async register(dto: RegisterDto): Promise<void> {
-		try {
-			const { email } = await this.userService.create(dto);
-			await this.sendVerificationEmail(email);
-		} catch (err) {
-			console.log(err);
-		}
+		const { email } = await this.userService.create(dto);
+		await this.sendVerificationEmail(email);
 	}
 
 	async login(user: User, res: Response): Promise<AuthResponseDto> {

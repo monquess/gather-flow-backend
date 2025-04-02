@@ -11,7 +11,7 @@ export class NotificationProcessor extends WorkerHost {
 		super();
 	}
 
-	async process(job: Job<NotificationJobData>): Promise<any> {
+	async process(job: Job<NotificationJobData>): Promise<void> {
 		const { channel, notifiable, notification } = job.data;
 
 		const channelInstance = this.moduleRef.get<NotificationChannel>(channel, {
@@ -29,7 +29,5 @@ export class NotificationProcessor extends WorkerHost {
 				await channelInstance.send(notifiable, notificationInstance);
 			}
 		}
-
-		return;
 	}
 }
