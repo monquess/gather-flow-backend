@@ -11,16 +11,17 @@ import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
-
 import { Prisma, Provider, User } from '@prisma/client';
+
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { RedisService } from '@modules/redis/redis.service';
 import { UserService } from '@modules/user/user.service';
 import { UserEntity } from '@modules/user/entities/user.entity';
 import { MailService } from '@modules/mail/mail.service';
+import { EnvironmentVariables } from '@config/env/environment-variables.config';
+
 import { AuthResponseDto, RegisterDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
 import { TOKEN_PREFIXES } from './constants/token-prefixes.constant';
 import { COOKIE_NAMES } from './constants/cookie-names.constant';
 
@@ -112,14 +113,13 @@ export class AuthService {
 			email
 		);
 
-		if (token !== verifyToken) {
+		const match = token !== null && (await bcrypt.compare(verifyToken, token));
+		if (!match) {
 			throw new BadRequestException('Invalid email or token');
 		}
 
 		await this.prisma.user.update({
-			where: {
-				email,
-			},
+			where: { email },
 			data: {
 				verified: true,
 			},
@@ -137,16 +137,15 @@ export class AuthService {
 			email
 		);
 
-		if (token !== resetToken) {
+		const match = token !== null && (await bcrypt.compare(resetToken, token));
+		if (!match) {
 			await this.checkResetPasswordRetries(email);
 			throw new BadRequestException('Invalid email or token');
 		}
 
 		const salt = await bcrypt.genSalt();
 		await this.prisma.user.update({
-			where: {
-				email,
-			},
+			where: { email },
 			data: {
 				password: await bcrypt.hash(password, salt),
 			},
@@ -178,16 +177,16 @@ export class AuthService {
 			return;
 		}
 
-		const token = crypto.randomBytes(3).toString('hex').toUpperCase();
+		const token = crypto.randomBytes(3).toString('hex');
 		const context = {
 			username: user.username,
-			token,
+			token: token.toUpperCase(),
 		};
 
 		await this.redis.set(
 			TOKEN_PREFIXES.VERIFICATION,
 			user.email,
-			token,
+			await bcrypt.hash(token, 10),
 			15 * 60
 		);
 
@@ -201,13 +200,18 @@ export class AuthService {
 
 	async sendPasswordResetEmail(email: string): Promise<void> {
 		const { username } = await this.userService.findByEmail(email);
-		const token = crypto.randomBytes(3).toString('hex').toUpperCase();
+		const token = crypto.randomBytes(3).toString('hex');
 		const context = {
 			username,
-			token,
+			token: token.toUpperCase(),
 		};
 
-		await this.redis.set(TOKEN_PREFIXES.RESET_PASSWORD, email, token, 15 * 60);
+		await this.redis.set(
+			TOKEN_PREFIXES.RESET_PASSWORD,
+			email,
+			await bcrypt.hash(token, 10),
+			15 * 60
+		);
 
 		await this.mailService.sendMail({
 			to: email,
