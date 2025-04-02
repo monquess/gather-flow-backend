@@ -1,7 +1,9 @@
 import { HttpStatus } from '@nestjs/common';
-import { origins } from '@config/cors/cors.origins';
+import { CorsOptions } from 'cors';
 
-export const corsOptions = {
+export const origins = ['http://localhost:3000', process.env.CLIENT_URL];
+
+export const corsOptions: CorsOptions = {
 	origin: origins.filter((origin) => origin !== undefined),
 	methods: ['GET', 'POST', 'PATCH', 'DELETE'],
 	optionsSuccessStatus: HttpStatus.NO_CONTENT,

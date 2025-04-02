@@ -9,7 +9,7 @@ import { RedisService } from '@modules/redis/redis.service';
 import { TOKEN_PREFIXES } from '../constants/token-prefixes.constant';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@modules/prisma/prisma.service';
-import { COOKIE_NAMES } from '../constants/cookie-names.constant';
+import { COOKIE_NAMES } from '../../../common/constant/cookie-names.constant';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(

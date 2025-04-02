@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheModule, CacheModuleOptions } from '@nestjs/cache-manager';
 import { JwtModule } from '@nestjs/jwt';
@@ -20,8 +20,8 @@ import {
 	EnvironmentVariables,
 	validate,
 } from '@config/env/environment-variables.config';
-import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { SecurityModule } from './security/security.module';
 
 @Module({
 	imports: [
@@ -98,15 +98,12 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 			}),
 			inject: [ConfigService],
 		}),
+		SecurityModule,
 	],
 	providers: [
 		{
 			provide: APP_GUARD,
 			useClass: JwtAuthGuard,
-		},
-		{
-			provide: APP_INTERCEPTOR,
-			useClass: CacheInterceptor,
 		},
 	],
 })

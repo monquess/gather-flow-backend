@@ -22,7 +22,7 @@ import { EnvironmentVariables } from '@config/env/environment-variables.config';
 import { AuthResponseDto, RegisterDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TOKEN_PREFIXES } from './constants/token-prefixes.constant';
-import { COOKIE_NAMES } from './constants/cookie-names.constant';
+import { COOKIE_NAMES } from '../../common/constant/cookie-names.constant';
 
 @Injectable()
 export class AuthService {
@@ -40,7 +40,7 @@ export class AuthService {
 		await this.sendVerificationEmail(email);
 	}
 
-	async login(user: User, res: Response): Promise<AuthResponseDto> {
+	async login(res: Response, user: User): Promise<AuthResponseDto> {
 		if (!user.verified) {
 			throw new UnauthorizedException('User email is not verified');
 		}
@@ -59,20 +59,20 @@ export class AuthService {
 	}
 
 	async socialLogin(
+		res: Response,
 		data: User,
-		provider: Provider,
-		res: Response
+		provider: Provider
 	): Promise<AuthResponseDto> {
 		try {
 			const user = await this.userService.findByEmail(data.email);
-			return this.login(user, res);
+			return this.login(res, user);
 		} catch (error) {
 			if (
 				error instanceof Prisma.PrismaClientKnownRequestError &&
 				error.code === 'P2025'
 			) {
 				const dto = { ...data, provider, verified: true };
-				return this.login(dto, res);
+				return this.login(res, dto);
 			}
 
 			throw error;

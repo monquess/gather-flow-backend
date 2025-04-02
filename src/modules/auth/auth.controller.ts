@@ -74,7 +74,7 @@ export class AuthController {
 		@CurrentUser() user: User,
 		@Res({ passthrough: true }) res: Response
 	): Promise<AuthResponseDto> {
-		return this.authService.login(user, res);
+		return this.authService.login(res, user);
 	}
 
 	@ApiExcludeEndpoint()
@@ -82,7 +82,7 @@ export class AuthController {
 	@UseGuards(GoogleAuthGuard)
 	@HttpCode(HttpStatus.OK)
 	@Get('google')
-	async googleAuth(): Promise<void> {}
+	googleAuth(): void {}
 
 	@ApiExcludeEndpoint()
 	@Public()
@@ -94,9 +94,9 @@ export class AuthController {
 		@Res({ passthrough: true }) res: Response
 	): Promise<void> {
 		const { accessToken } = await this.authService.socialLogin(
+			res,
 			user,
-			Provider.GOOGLE,
-			res
+			Provider.GOOGLE
 		);
 		const url = this.configService.get<string>('CLIENT_URL');
 
@@ -106,7 +106,7 @@ export class AuthController {
 	@ApiAuthLogout()
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Post('logout')
-	async logout(
+	logout(
 		@CurrentUser() { id }: User,
 		@Res({ passthrough: true }) res: Response
 	): Promise<void> {
@@ -118,7 +118,7 @@ export class AuthController {
 	@UseGuards(JwtRefreshAuthGuard)
 	@HttpCode(HttpStatus.OK)
 	@Post('refresh')
-	async refresh(
+	refresh(
 		@CurrentUser() user: User,
 		@Res({ passthrough: true }) res: Response
 	): Promise<AuthResponseDto> {
@@ -129,7 +129,7 @@ export class AuthController {
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Public()
 	@Post('send-verification')
-	async sendVerificationEmail(@Body() { email }: SendEmailDto): Promise<void> {
+	sendVerificationEmail(@Body() { email }: SendEmailDto): Promise<void> {
 		return this.authService.sendVerificationEmail(email);
 	}
 
@@ -137,7 +137,7 @@ export class AuthController {
 	@Public()
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Post('verify-email')
-	async verifyEmail(@Body() { email, token }: EmailVerifyDto): Promise<void> {
+	verifyEmail(@Body() { email, token }: EmailVerifyDto): Promise<void> {
 		return this.authService.verifyEmail(email, token);
 	}
 
@@ -145,7 +145,7 @@ export class AuthController {
 	@Public()
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Post('forgot-password')
-	async sendPasswordResetEmail(@Body() { email }: SendEmailDto): Promise<void> {
+	sendPasswordResetEmail(@Body() { email }: SendEmailDto): Promise<void> {
 		return this.authService.sendPasswordResetEmail(email);
 	}
 
@@ -153,7 +153,7 @@ export class AuthController {
 	@Public()
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Post('reset-password')
-	async resetPassword(
+	resetPassword(
 		@Body() { email, token, password }: ResetPasswordDto
 	): Promise<void> {
 		return this.authService.resetPassword(email, token, password);
