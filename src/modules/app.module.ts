@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { CacheModule, CacheModuleOptions } from '@nestjs/cache-manager';
-import { JwtModule } from '@nestjs/jwt';
+import { APP_GUARD } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bullmq';
 
 import * as path from 'path';
-import KeyvRedis, { Keyv, RedisClientOptions } from '@keyv/redis';
 
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -15,48 +13,21 @@ import { S3Module } from './s3/s3.module';
 import { NotificationModule } from './notification/notification.module';
 import { MailModule } from './mail/mail.module';
 import { MailOptions } from './mail/interfaces/mail-options.interface';
+import { CacheConfigFactory } from './config/factories/cache-config.factory';
+import { ConfigModule } from './config/config.module';
 
-import {
-	EnvironmentVariables,
-	validate,
-} from '@config/env/environment-variables.config';
-import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
+import { EnvironmentVariables } from '@config/env/environment-variables.config';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
 	imports: [
-		ConfigModule.forRoot({
-			cache: true,
-			isGlobal: true,
-			validate,
-			validationOptions: {
-				abortEarly: true,
-			},
-		}),
-		JwtModule.register({
-			global: true,
-		}),
 		CacheModule.registerAsync({
 			isGlobal: true,
-			useFactory: (
-				configService: ConfigService<EnvironmentVariables, true>
-			): CacheModuleOptions => {
-				const redisOptions: RedisClientOptions = {
-					password: configService.get<string>('REDIS_PASSWORD'),
-					socket: {
-						host: configService.get<string>('REDIS_HOST'),
-						port: configService.get<number>('REDIS_PORT'),
-					},
-				};
-				return {
-					stores: [
-						new Keyv(new KeyvRedis(redisOptions, { namespace: 'cache' }), {
-							ttl: configService.get<number>('CACHE_TTL'),
-						}),
-					],
-				};
+			useFactory: (factory: CacheConfigFactory) => {
+				return factory.createCacheOptions();
 			},
-			inject: [ConfigService],
+			inject: [CacheConfigFactory],
+			imports: [ConfigModule],
 		}),
 		PrismaModule,
 		UserModule,
@@ -98,15 +69,12 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 			}),
 			inject: [ConfigService],
 		}),
+		ConfigModule,
 	],
 	providers: [
 		{
 			provide: APP_GUARD,
 			useClass: JwtAuthGuard,
-		},
-		{
-			provide: APP_INTERCEPTOR,
-			useClass: CacheInterceptor,
 		},
 	],
 })

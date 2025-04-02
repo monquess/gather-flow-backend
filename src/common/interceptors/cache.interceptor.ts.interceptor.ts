@@ -6,10 +6,8 @@ import {
 	NestInterceptor,
 } from '@nestjs/common';
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
-import { catchError, from, Observable, of, switchMap, tap } from 'rxjs';
+import { catchError, from, map, Observable, of, switchMap } from 'rxjs';
 import { Request } from 'express';
-import * as crypto from 'crypto';
-import { User } from '@prisma/client';
 
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
@@ -25,31 +23,29 @@ export class CacheInterceptor implements NestInterceptor {
 		const key = this.trackBy(request);
 
 		return from(this.cache.get(key)).pipe(
-			catchError(() => {
-				return next.handle();
-			}),
+			catchError(() => next.handle()),
 			switchMap((cached) => {
 				if (cached) {
 					return of(cached);
 				}
-				return next.handle().pipe(
-					tap((response) => {
-						void this.cache.set(key, response);
-					})
-				);
+				return next
+					.handle()
+					.pipe(
+						switchMap((response) =>
+							from(this.cache.set(key, response)).pipe(map((): any => response))
+						)
+					);
 			})
 		);
 	}
 
 	trackBy(request: Request): string {
-		const user = request.user as User;
 		const url = new URL(
 			request.url,
 			`${request.protocol}://${request.get('host')}`
 		);
 		url.searchParams.sort();
-		const key = `user-${user.id}:${url.pathname}?${url.searchParams.toString()}`;
 
-		return crypto.createHash('sha256').update(key).digest('hex');
+		return `${url.pathname}?${url.searchParams.toString()}`;
 	}
 }

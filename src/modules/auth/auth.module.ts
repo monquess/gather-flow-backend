@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 
@@ -18,7 +19,9 @@ import { AuthController } from './auth.controller';
 
 @Module({
 	imports: [
-		PrismaModule,
+		JwtModule.register({
+			global: true,
+		}),
 		RedisModule.registerAsync({
 			useFactory: (configService: ConfigService) => ({
 				host: configService.get<string>('REDIS_HOST'),
@@ -27,6 +30,7 @@ import { AuthController } from './auth.controller';
 			}),
 			inject: [ConfigService],
 		}),
+		PrismaModule,
 		UserModule,
 		HttpModule,
 	],
