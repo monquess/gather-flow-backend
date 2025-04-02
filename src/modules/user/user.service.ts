@@ -13,14 +13,14 @@ import { UserEntity } from './entities/user.entity';
 
 import { S3Service } from '@modules/s3/s3.service';
 import { PrismaService } from '@modules/prisma/prisma.service';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
+import { AppConfig } from '@modules/config/env/app.config';
 
 @Injectable()
 export class UserService {
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly s3Service: S3Service,
-		private readonly configService: ConfigService<EnvironmentVariables, true>
+		private readonly configService: ConfigService<AppConfig, true>
 	) {}
 
 	async findAll({

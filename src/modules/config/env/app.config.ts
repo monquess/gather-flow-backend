@@ -4,19 +4,15 @@ import {
 	IsNumber,
 	Max,
 	Min,
-	validateSync,
 	IsBoolean,
+	validateSync,
 } from 'class-validator';
 import { plainToInstance, Transform } from 'class-transformer';
+import { NodeEnv } from '@common/enum/node-env.enum';
 
-export enum Environment {
-	DEVELOPMENT = 'development',
-	PRODUCTION = 'production',
-}
-
-export class EnvironmentVariables {
-	@IsEnum(Environment)
-	readonly NODE_ENV: Environment = Environment.DEVELOPMENT;
+export class AppConfig {
+	@IsEnum(NodeEnv)
+	readonly NODE_ENV: NodeEnv = NodeEnv.DEV;
 
 	@IsNumber()
 	@Min(0)
@@ -137,7 +133,7 @@ export class EnvironmentVariables {
 }
 
 export function validate(config: Record<string, unknown>) {
-	const validatedConfig = plainToInstance(EnvironmentVariables, config, {
+	const validatedConfig = plainToInstance(AppConfig, config, {
 		enableImplicitConversion: true,
 	});
 	const errors = validateSync(validatedConfig, {

@@ -7,7 +7,8 @@ import {
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
+
+import { AppConfig } from '@modules/config/env/app.config';
 
 interface RecaptchaResponse {
 	success: boolean;
@@ -15,10 +16,10 @@ interface RecaptchaResponse {
 
 @Injectable()
 export class RecaptchaGuard implements CanActivate {
-	private readonly url = 'https://www.google.com/recaptcha/api/siteverify';
+	protected readonly url = 'https://www.google.com/recaptcha/api/siteverify';
 
 	constructor(
-		private readonly configService: ConfigService<EnvironmentVariables, true>,
+		private readonly configService: ConfigService<AppConfig, true>,
 		private readonly httpService: HttpService
 	) {}
 

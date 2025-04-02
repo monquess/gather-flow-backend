@@ -1,13 +1,15 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import {
 	DeleteObjectCommand,
 	PutObjectCommand,
 	S3Client,
 } from '@aws-sdk/client-s3';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
 import { extname } from 'path';
 import { v4 as uuid } from 'uuid';
+
+import { AppConfig } from '@modules/config/env/app.config';
 
 @Injectable()
 export class S3Service {
@@ -15,9 +17,7 @@ export class S3Service {
 	private bucket: string;
 	private endpoint: string;
 
-	constructor(
-		private readonly configService: ConfigService<EnvironmentVariables, true>
-	) {
+	constructor(private readonly configService: ConfigService<AppConfig, true>) {
 		this.bucket = this.configService.get<string>('S3_BUCKET_NAME');
 		this.endpoint = this.configService.get<string>('S3_ENDPOINT');
 

@@ -1,14 +1,12 @@
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, Profile, VerifyCallback } from 'passport-google-oauth20';
+import { AppConfig } from '@modules/config/env/app.config';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-	constructor(
-		private readonly configService: ConfigService<EnvironmentVariables, true>
-	) {
+	constructor(private readonly configService: ConfigService<AppConfig, true>) {
 		super({
 			clientID: configService.get<string>('GOOGLE_CLIENT_ID'),
 			clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET'),

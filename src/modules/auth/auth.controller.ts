@@ -43,7 +43,7 @@ import {
 } from './guards';
 
 import { UserEntity } from '@modules/user/entities/user.entity';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
+import { AppConfig } from '@modules/config/env/app.config';
 import { Public } from '@common/decorators/public.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
@@ -54,7 +54,7 @@ import { CurrentUser } from '@common/decorators/current-user.decorator';
 export class AuthController {
 	constructor(
 		private readonly authService: AuthService,
-		private readonly configService: ConfigService<EnvironmentVariables, true>
+		private readonly configService: ConfigService<AppConfig, true>
 	) {}
 
 	@ApiAuthRegister()

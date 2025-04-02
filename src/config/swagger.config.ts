@@ -1,7 +1,7 @@
 import { DocumentBuilder } from '@nestjs/swagger';
 
 export const swaggerConfig = new DocumentBuilder()
-	.setTitle('gather-flow API')
+	.setTitle('GatherFlow API')
 	.setDescription('GatherFlow API documentation')
 	.setVersion('1.0')
 	.setLicense('MIT', 'https://opensource.org/licenses/MIT')
@@ -13,5 +13,6 @@ export const swaggerConfig = new DocumentBuilder()
 		type: 'http',
 		scheme: 'bearer',
 		bearerFormat: 'JWT',
+		in: 'header',
 	})
 	.build();

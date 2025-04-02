@@ -20,18 +20,19 @@ import { UserEntity } from '@modules/user/entities/user.entity';
 import { MailService } from '@modules/mail/mail.service';
 import { AuthResponseDto, RegisterDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
+import { AppConfig } from '@modules/config/env/app.config';
 import { TOKEN_PREFIXES } from './constants/token-prefixes.constant';
 import { COOKIE_NAMES } from './constants/cookie-names.constant';
 
 import { CreateUserDto } from '@modules/user/dto/create-user.dto';
+import { NodeEnv } from '@common/enum/node-env.enum';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly redis: RedisService,
-		private readonly configService: ConfigService<EnvironmentVariables, true>,
+		private readonly configService: ConfigService<AppConfig, true>,
 		private readonly userService: UserService,
 		private readonly jwtService: JwtService,
 		private readonly mailService: MailService
@@ -235,7 +236,7 @@ export class AuthService {
 		res.cookie(COOKIE_NAMES.REFRESH_TOKEN, token, {
 			httpOnly: true,
 			sameSite: 'lax',
-			secure: this.configService.get<string>('NODE_ENV') === 'production',
+			secure: this.configService.get<NodeEnv>('NODE_ENV') === NodeEnv.PROD,
 			maxAge: exp * 1000,
 		});
 	}
