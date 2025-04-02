@@ -9,7 +9,6 @@ import { JwtService } from '@nestjs/jwt';
 
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
-import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
 import { Prisma, Provider, User } from '@prisma/client';
 
@@ -24,8 +23,6 @@ import { AuthResponseDto, RegisterDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TOKEN_PREFIXES } from './constants/token-prefixes.constant';
 import { COOKIE_NAMES } from './constants/cookie-names.constant';
-
-import { CreateUserDto } from '@modules/user/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -75,13 +72,7 @@ export class AuthService {
 				error.code === 'P2025'
 			) {
 				const dto = { ...data, provider, verified: true };
-				const user = await this.userService.create(
-					plainToInstance(CreateUserDto, dto, {
-						excludeExtraneousValues: true,
-					})
-				);
-
-				return this.login(user, res);
+				return this.login(dto, res);
 			}
 
 			throw error;
@@ -143,11 +134,10 @@ export class AuthService {
 			throw new BadRequestException('Invalid email or token');
 		}
 
-		const salt = await bcrypt.genSalt();
 		await this.prisma.user.update({
 			where: { email },
 			data: {
-				password: await bcrypt.hash(password, salt),
+				password: await bcrypt.hash(password, 10),
 			},
 		});
 		await this.redis.del(TOKEN_PREFIXES.RESET_PASSWORD, email);
@@ -227,12 +217,11 @@ export class AuthService {
 		res: Response
 	): Promise<void> {
 		const exp = this.configService.get<number>('JWT_REFRESH_EXPIRATION');
-		const salt = await bcrypt.genSalt();
 
 		await this.redis.set(
 			TOKEN_PREFIXES.REFRESH,
 			user.id,
-			await bcrypt.hash(token, salt),
+			await bcrypt.hash(token, 10),
 			exp
 		);
 
