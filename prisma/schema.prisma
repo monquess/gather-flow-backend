@@ -22,6 +22,17 @@ model User {
   @@map("users")
 }
 
+model Company {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  description String?
+  email       String   @unique @db.VarChar(255)
+  location    String   @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("companies")
+}
+
 enum Provider {
   LOCAL
   GOOGLE
