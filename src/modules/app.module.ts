@@ -22,6 +22,7 @@ import {
 } from '@config/env/environment-variables.config';
 import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { CompanyModule } from './company/company.module';
 
 @Module({
 	imports: [
@@ -98,16 +99,17 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 			}),
 			inject: [ConfigService],
 		}),
+		CompanyModule,
 	],
 	providers: [
 		{
 			provide: APP_GUARD,
 			useClass: JwtAuthGuard,
 		},
-		{
-			provide: APP_INTERCEPTOR,
-			useClass: CacheInterceptor,
-		},
+		// {
+		// 	provide: APP_INTERCEPTOR,
+		// 	useClass: CacheInterceptor,
+		// },
 	],
 })
 export class AppModule {}

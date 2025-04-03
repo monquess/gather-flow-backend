@@ -8,13 +8,14 @@ datasource db {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  username String   @unique @db.VarChar(255)
-  email    String   @unique @db.VarChar(255)
-  password String?  @db.VarChar(60)
-  verified Boolean  @default(false)
-  avatar   String
-  provider Provider @default(LOCAL)
+  id        Int             @id @default(autoincrement())
+  username  String          @unique @db.VarChar(255)
+  email     String          @unique @db.VarChar(255)
+  password  String?         @db.VarChar(60)
+  verified  Boolean         @default(false)
+  avatar    String
+  provider  Provider        @default(LOCAL)
+  companies CompanyMember[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -22,7 +23,36 @@ model User {
   @@map("users")
 }
 
+model Company {
+  id          Int             @id @default(autoincrement())
+  name        String          @db.VarChar(255)
+  description String?
+  email       String          @unique @db.VarChar(255)
+  location    String          @db.VarChar(255)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  users       CompanyMember[]
+
+  @@map("companies")
+}
+
+model CompanyMember {
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int         @map("user_id")
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int         @map("company_id")
+  role      CompanyRole @default(MEMBER)
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@id([userId, companyId])
+  @@map("company_members")
+}
+
 enum Provider {
   LOCAL
   GOOGLE
+}
+
+enum CompanyRole {
+  ADMIN
+  MEMBER
 }
