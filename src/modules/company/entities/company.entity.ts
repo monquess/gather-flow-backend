@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { CompanyMemberEntity } from './company-member.entity';
 
 export class CompanyEntity {
 	@ApiProperty({
@@ -37,7 +38,13 @@ export class CompanyEntity {
 	})
 	createdAt: Date;
 
+	users?: CompanyMemberEntity[];
+
 	constructor(partial: Partial<CompanyEntity>) {
 		Object.assign(this, partial);
+
+		if (partial?.users?.length) {
+			this.users = partial.users.map((user) => new CompanyMemberEntity(user));
+		}
 	}
 }

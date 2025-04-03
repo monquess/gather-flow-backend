@@ -13,6 +13,7 @@ import {
 } from '@nestjs/swagger';
 import { CompanyEntity } from '../entities/company.entity';
 import { ApiPaginatedResponse } from '@common/pagination/api-paginated-response';
+import { CompanyMemberEntity } from '../entities/company-member.entity';
 
 export const ApiCompanyFindAll = () =>
 	applyDecorators(
@@ -43,6 +44,30 @@ export const ApiCompanyCreate = () =>
 		ApiCreatedResponse({ type: CompanyEntity })
 	);
 
+export const ApiCompanyMemberCreate = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Create company member' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'company id',
+		}),
+		ApiParam({
+			name: 'userId',
+			description: 'user id',
+		}),
+		ApiCreatedResponse({ type: CompanyMemberEntity }),
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiNotFoundResponse({
+			description: 'User not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
+	);
+
 export const ApiCompanyUpdate = () =>
 	applyDecorators(
 		ApiAuth(),
@@ -57,6 +82,30 @@ export const ApiCompanyUpdate = () =>
 		ApiConflictResponse({ description: 'Company already exists' })
 	);
 
+export const ApiCompanyMemberUpdateRole = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Update company member role' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'company id',
+		}),
+		ApiParam({
+			name: 'userId',
+			description: 'user id',
+		}),
+		ApiOkResponse({ type: CompanyMemberEntity }),
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiNotFoundResponse({
+			description: 'User not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
+	);
+
 export const ApiCompanyRemove = () =>
 	applyDecorators(
 		ApiAuth(),
@@ -68,4 +117,28 @@ export const ApiCompanyRemove = () =>
 		ApiNoContentResponse(),
 		ApiNotFoundResponse({ description: 'Company not found' }),
 		ApiForbiddenResponse({ description: 'Access denied' })
+	);
+
+export const ApiCompanyMemberRemove = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Delete company member' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'company id',
+		}),
+		ApiParam({
+			name: 'userId',
+			description: 'user id',
+		}),
+		ApiNoContentResponse(),
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiNotFoundResponse({
+			description: 'User not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
 	);

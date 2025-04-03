@@ -25,9 +25,15 @@ import {
 	ApiCompanyCreate,
 	ApiCompanyFindAll,
 	ApiCompanyFindById,
+	ApiCompanyMemberCreate,
+	ApiCompanyMemberRemove,
+	ApiCompanyMemberUpdateRole,
 	ApiCompanyRemove,
 	ApiCompanyUpdate,
 } from './decorators/api-company.decorator';
+import { CreateCompanyMemberDto } from './dto/create-company-member.dto';
+import { CompanyMemberEntity } from './entities/company-member.entity';
+import { UpdateCompanyMemberRoleDto } from './dto/update-company-member-role.dto';
 
 @Controller('companies')
 export class CompanyController {
@@ -46,7 +52,7 @@ export class CompanyController {
 	@ApiCompanyFindById()
 	@Public()
 	@Get(':id')
-	findById(@Param('id', ParseIntPipe) id: number) {
+	findById(@Param('id', ParseIntPipe) id: number): Promise<CompanyEntity> {
 		return this.companyService.findById(id);
 	}
 
@@ -55,8 +61,24 @@ export class CompanyController {
 	create(
 		@Body() createCompanyDto: CreateCompanyDto,
 		@CurrentUser() user: User
-	) {
+	): Promise<CompanyEntity> {
 		return this.companyService.create(createCompanyDto, user);
+	}
+
+	@ApiCompanyMemberCreate()
+	@Post(':companyId/users/:userId')
+	createCompanyMember(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Param('userId', ParseIntPipe) targetUserId: number,
+		@Body() createCompanyMemberDto: CreateCompanyMemberDto,
+		@CurrentUser() user: User
+	): Promise<CompanyMemberEntity> {
+		return this.companyService.createCompanyMember(
+			companyId,
+			targetUserId,
+			createCompanyMemberDto,
+			user
+		);
 	}
 
 	@ApiCompanyUpdate()
@@ -65,14 +87,48 @@ export class CompanyController {
 		@Param('id', ParseIntPipe) id: number,
 		@Body() updateCompanyDto: UpdateCompanyDto,
 		@CurrentUser() user: User
-	) {
+	): Promise<CompanyEntity> {
 		return this.companyService.update(id, updateCompanyDto, user);
+	}
+
+	@ApiCompanyMemberUpdateRole()
+	@Patch(':companyId/users/:userId/role')
+	updateCompanyMemberRole(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Param('userId', ParseIntPipe) targetUserId: number,
+		@Body() updateCompanyMemberRoleDto: UpdateCompanyMemberRoleDto,
+		@CurrentUser() user: User
+	): Promise<CompanyMemberEntity> {
+		return this.companyService.updateCompanyMemberRole(
+			companyId,
+			targetUserId,
+			updateCompanyMemberRoleDto,
+			user
+		);
 	}
 
 	@ApiCompanyRemove()
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Delete(':id')
-	remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: User) {
+	remove(
+		@Param('id', ParseIntPipe) id: number,
+		@CurrentUser() user: User
+	): Promise<void> {
 		return this.companyService.remove(id, user);
+	}
+
+	@ApiCompanyMemberRemove()
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@Delete(':companyId/users/:userId')
+	removeCompanyMember(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Param('userId', ParseIntPipe) targetUserId: number,
+		@CurrentUser() user: User
+	): Promise<void> {
+		return this.companyService.removeCompanyMember(
+			companyId,
+			targetUserId,
+			user
+		);
 	}
 }
