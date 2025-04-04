@@ -23,6 +23,7 @@ import {
 import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CompanyModule } from './company/company.module';
+import { EventModule } from './event/event.module';
 
 @Module({
 	imports: [
@@ -100,6 +101,7 @@ import { CompanyModule } from './company/company.module';
 			inject: [ConfigService],
 		}),
 		CompanyModule,
+		EventModule,
 	],
 	providers: [
 		{

@@ -49,20 +49,20 @@ model CompanyMember {
 }
 
 model Event {
-  id                  Int                @id @default(autoincrement())
-  title               String             @db.VarChar(255)
-  description         String?
-  format              Format
-  theme               Theme
-  location            String             @db.VarChar(255)
-  ticketPrice         Decimal            @map("ticket_price") @db.Decimal(10, 2)
-  ticketsQuantity     Int                @map("tickets_quantity")
-  poster              String
-  visitorsVisibillity VisitorsVisibility @default(EVERYONE) @map("visitors_visibillity")
-  startDate           DateTime           @map("start_date")
-  endDate             DateTime?          @map("end_date")
-  publishDate         DateTime?          @map("publish_date")
-  createdAt           DateTime           @default(now()) @map("created_at")
+  id                 Int                @id @default(autoincrement())
+  title              String             @db.VarChar(255)
+  description        String?
+  format             Format
+  theme              Theme
+  location           String             @db.VarChar(255)
+  ticketPrice        Decimal            @map("ticket_price") @db.Decimal(10, 2)
+  ticketsQuantity    Int                @map("tickets_quantity")
+  poster             String
+  visitorsVisibility VisitorsVisibility @default(EVERYONE) @map("visitors_visibillity")
+  startDate          DateTime           @map("start_date")
+  endDate            DateTime?          @map("end_date")
+  publishDate        DateTime?          @map("publish_date")
+  createdAt          DateTime           @default(now()) @map("created_at")
 
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId Int     @map("company_id")

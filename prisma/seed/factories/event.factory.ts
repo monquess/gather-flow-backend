@@ -37,7 +37,7 @@ class EventFactory extends Factory<Event> {
 				),
 				ticketsQuantity: faker.number.int({ min: 50, max: 1000 }),
 				poster: faker.image.urlPicsumPhotos({ width: 600, height: 800 }),
-				visitorsVisibillity: faker.helpers.enumValue(VisitorsVisibility),
+				visitorsVisibility: faker.helpers.enumValue(VisitorsVisibility),
 				startDate,
 				endDate,
 				publishDate,

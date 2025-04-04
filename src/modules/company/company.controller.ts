@@ -2,14 +2,19 @@ import {
 	Body,
 	Controller,
 	Delete,
+	FileTypeValidator,
 	Get,
 	HttpCode,
 	HttpStatus,
+	MaxFileSizeValidator,
 	Param,
+	ParseFilePipe,
 	ParseIntPipe,
 	Patch,
 	Post,
 	Query,
+	UploadedFile,
+	UseInterceptors,
 } from '@nestjs/common';
 import { CompanyService } from './company.service';
 import { CompanyEntity } from './entities/company.entity';
@@ -30,10 +35,18 @@ import {
 	ApiCompanyMemberUpdateRole,
 	ApiCompanyRemove,
 	ApiCompanyUpdate,
+	ApiEventCreate,
+	ApiEventRemove,
+	ApiEventUpdate,
 } from './decorators/api-company.decorator';
 import { CreateCompanyMemberDto } from './dto/create-company-member.dto';
 import { CompanyMemberEntity } from './entities/company-member.entity';
 import { UpdateCompanyMemberRoleDto } from './dto/update-company-member-role.dto';
+import { CreateEventDto } from '@modules/company/dto/create-event.dto';
+import { ImageTransformPipe } from '@modules/s3/pipes/image-transform.pipe';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { EventEntity } from '@modules/event/entities/event.entity';
+import { UpdateEventDto } from '@modules/company/dto/update-event.dto';
 
 @Controller('companies')
 export class CompanyController {
@@ -81,6 +94,36 @@ export class CompanyController {
 		);
 	}
 
+	@ApiEventCreate()
+	@UseInterceptors(FileInterceptor('poster'))
+	@Post(':companyId/events')
+	createEvent(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Body() createEventDto: CreateEventDto,
+		@CurrentUser() user: User,
+		@UploadedFile(
+			new ParseFilePipe({
+				validators: [
+					new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp|tiff)' }),
+					new MaxFileSizeValidator({
+						maxSize: 10e6,
+						message: 'File is too large. Max file size is 10MB',
+					}),
+				],
+				fileIsRequired: false,
+			}),
+			new ImageTransformPipe()
+		)
+		poster?: Express.Multer.File
+	): Promise<EventEntity> {
+		return this.companyService.createEvent(
+			companyId,
+			createEventDto,
+			user,
+			poster
+		);
+	}
+
 	@ApiCompanyUpdate()
 	@Patch(':id')
 	update(
@@ -107,6 +150,38 @@ export class CompanyController {
 		);
 	}
 
+	@ApiEventUpdate()
+	@UseInterceptors(FileInterceptor('poster'))
+	@Patch(':companyId/events/:eventId')
+	updateEvent(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Param('eventId', ParseIntPipe) eventId: number,
+		@Body() updateEventDto: UpdateEventDto,
+		@CurrentUser() user: User,
+		@UploadedFile(
+			new ParseFilePipe({
+				validators: [
+					new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp|tiff)' }),
+					new MaxFileSizeValidator({
+						maxSize: 10e6,
+						message: 'File is too large. Max file size is 10MB',
+					}),
+				],
+				fileIsRequired: false,
+			}),
+			new ImageTransformPipe()
+		)
+		poster?: Express.Multer.File
+	): Promise<EventEntity> {
+		return this.companyService.updateEvent(
+			companyId,
+			eventId,
+			updateEventDto,
+			user,
+			poster
+		);
+	}
+
 	@ApiCompanyRemove()
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Delete(':id')
@@ -130,5 +205,16 @@ export class CompanyController {
 			targetUserId,
 			user
 		);
+	}
+
+	@ApiEventRemove()
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@Delete(':companyId/events/:eventId')
+	removeEvent(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Param('eventId', ParseIntPipe) eventId: number,
+		@CurrentUser() user: User
+	): Promise<void> {
+		return this.companyService.removeEvent(companyId, eventId, user);
 	}
 }
