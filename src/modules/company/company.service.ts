@@ -5,11 +5,10 @@ import { FilteringOptionsDto } from './dto/filtering-options.dto';
 import { getPaginationMeta } from '@common/pagination/paginated-metadata';
 import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
 import { Paginated } from '@common/pagination/paginated';
-import { CompanyRole, Prisma, User } from '@prisma/client';
+import { CompanyRole, EventStatus, Prisma, User } from '@prisma/client';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { CreateCompanyMemberDto } from './dto/create-company-member.dto';
-import { UserService } from '@modules/user/user.service';
 import { CompanyMemberEntity } from './entities/company-member.entity';
 import { UpdateCompanyMemberRoleDto } from './dto/update-company-member-role.dto';
 import { CreateEventDto } from '@modules/company/dto/create-event.dto';
@@ -19,6 +18,9 @@ import { UpdateEventDto } from '@modules/company/dto/update-event.dto';
 import { EventService } from '@modules/event/event.service';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from '@config/env/environment-variables.config';
+import { Job, Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
+import { PublishEventJobData } from './interfaces/publish-event-job-data.interface';
 
 @Injectable()
 export class CompanyService {
@@ -27,7 +29,7 @@ export class CompanyService {
 		private readonly s3Service: S3Service,
 		private readonly eventService: EventService,
 		private readonly configService: ConfigService<EnvironmentVariables, true>,
-		private readonly userService: UserService
+		@InjectQueue('publishEvent') private publishQueue: Queue
 	) {}
 
 	async findAll(
@@ -95,10 +97,7 @@ export class CompanyService {
 			(u) => u.userId === user.id
 		);
 
-		if (
-			!currentUserMembership ||
-			currentUserMembership.role !== CompanyRole.ADMIN
-		) {
+		if (currentUserMembership?.role !== CompanyRole.ADMIN) {
 			throw new ForbiddenException('Access denied');
 		}
 
@@ -121,7 +120,7 @@ export class CompanyService {
 
 		const membership = company.users?.find((u) => u.userId === user.id);
 
-		if (!membership || membership.role !== CompanyRole.ADMIN) {
+		if (membership?.role !== CompanyRole.ADMIN) {
 			throw new ForbiddenException('Access denied');
 		}
 
@@ -131,13 +130,32 @@ export class CompanyService {
 			posterUrl = posterData.url;
 		}
 
-		return this.prisma.event.create({
-			data: {
-				...dto,
-				companyId,
-				poster: posterUrl,
-			},
+		const event = await this.prisma.$transaction(async (prisma) => {
+			const newEvent = await prisma.event.create({
+				data: {
+					...dto,
+					companyId,
+					poster: posterUrl,
+					status: dto.publishDate ? EventStatus.DRAFT : EventStatus.PUBLISHED,
+				},
+			});
+
+			if (dto.publishDate) {
+				await this.publishQueue.add(
+					'publishEvent',
+					{ eventId: newEvent.id },
+					{
+						delay: new Date(dto.publishDate).getTime() - Date.now(),
+						jobId: `event-${newEvent.id}`,
+						removeOnComplete: true,
+					}
+				);
+			}
+
+			return newEvent;
 		});
+
+		return event;
 	}
 
 	async update(
@@ -149,7 +167,7 @@ export class CompanyService {
 
 		const membership = company.users?.find((u) => u.userId === user.id);
 
-		if (!membership || membership.role !== CompanyRole.ADMIN) {
+		if (membership?.role !== CompanyRole.ADMIN) {
 			throw new ForbiddenException('Access denied');
 		}
 
@@ -173,10 +191,7 @@ export class CompanyService {
 			(u) => u.userId === user.id
 		);
 
-		if (
-			!currentUserMembership ||
-			currentUserMembership.role !== CompanyRole.ADMIN
-		) {
+		if (currentUserMembership?.role !== CompanyRole.ADMIN) {
 			throw new ForbiddenException('Access denied');
 		}
 
@@ -206,7 +221,7 @@ export class CompanyService {
 
 		const membership = company.users?.find((u) => u.userId === user.id);
 
-		if (!membership || membership.role !== CompanyRole.ADMIN) {
+		if (membership?.role !== CompanyRole.ADMIN) {
 			throw new ForbiddenException('Access denied');
 		}
 
@@ -221,15 +236,48 @@ export class CompanyService {
 			posterUrl = posterData.url;
 		}
 
-		return this.prisma.event.update({
-			where: {
-				id: eventId,
-			},
-			data: {
-				...dto,
-				poster: posterUrl,
-			},
+		const updatedEvent = await this.prisma.$transaction(async (prisma) => {
+			const newEvent = await prisma.event.update({
+				where: {
+					id: eventId,
+				},
+				data: {
+					...dto,
+					poster: posterUrl,
+				},
+			});
+
+			const jobId = `event-${eventId}`;
+			const job = (await this.publishQueue.getJob(
+				jobId
+			)) as Job<PublishEventJobData>;
+
+			if (dto.status === EventStatus.PUBLISHED) {
+				if (job) {
+					await job.remove();
+				}
+			} else if (dto.publishDate) {
+				if (job) {
+					await job.remove();
+				}
+
+				if (newEvent.status === EventStatus.DRAFT) {
+					await this.publishQueue.add(
+						'publishEvent',
+						{ eventId: newEvent.id },
+						{
+							delay: new Date(dto.publishDate).getTime() - Date.now(),
+							jobId: `event-${newEvent.id}`,
+							removeOnComplete: true,
+						}
+					);
+				}
+			}
+
+			return newEvent;
 		});
+
+		return updatedEvent;
 	}
 
 	async remove(id: number, user: User): Promise<void> {
@@ -237,7 +285,7 @@ export class CompanyService {
 
 		const membership = company.users?.find((u) => u.userId === user.id);
 
-		if (!membership || membership.role !== CompanyRole.ADMIN) {
+		if (membership?.role !== CompanyRole.ADMIN) {
 			throw new ForbiddenException('Access denied');
 		}
 
@@ -283,7 +331,7 @@ export class CompanyService {
 
 		const membership = company.users?.find((u) => u.userId === user.id);
 
-		if (!membership || membership.role !== CompanyRole.ADMIN) {
+		if (membership?.role !== CompanyRole.ADMIN) {
 			throw new ForbiddenException('Access denied');
 		}
 
@@ -293,6 +341,17 @@ export class CompanyService {
 			await this.s3Service.deleteFile(event.poster);
 		}
 
-		await this.prisma.event.delete({ where: { id: eventId } });
+		await this.prisma.$transaction(async (prisma) => {
+			await prisma.event.delete({ where: { id: eventId } });
+
+			const jobId = `event-${eventId}`;
+			const job = (await this.publishQueue.getJob(
+				jobId
+			)) as Job<PublishEventJobData>;
+
+			if (job) {
+				await job.remove();
+			}
+		});
 	}
 }

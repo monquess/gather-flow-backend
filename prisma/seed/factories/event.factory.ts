@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import {
 	Company,
 	Event,
+	EventStatus,
 	Format,
 	Prisma,
 	Theme,
@@ -38,6 +39,7 @@ class EventFactory extends Factory<Event> {
 				ticketsQuantity: faker.number.int({ min: 50, max: 1000 }),
 				poster: faker.image.urlPicsumPhotos({ width: 600, height: 800 }),
 				visitorsVisibility: faker.helpers.enumValue(VisitorsVisibility),
+				status: faker.helpers.enumValue(EventStatus),
 				startDate,
 				endDate,
 				publishDate,

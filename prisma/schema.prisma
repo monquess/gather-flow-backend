@@ -59,6 +59,7 @@ model Event {
   ticketsQuantity    Int                @map("tickets_quantity")
   poster             String
   visitorsVisibility VisitorsVisibility @default(EVERYONE) @map("visitors_visibillity")
+  status             EventStatus        @default(DRAFT)
   startDate          DateTime           @map("start_date")
   endDate            DateTime?          @map("end_date")
   publishDate        DateTime?          @map("publish_date")
@@ -98,4 +99,9 @@ enum Theme {
 enum VisitorsVisibility {
   EVERYONE
   VISITOR
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
 }
