@@ -14,7 +14,6 @@ import {
 	imports: [
 		NestConfigModule.forRoot({
 			cache: true,
-			isGlobal: true,
 			validate,
 			validationOptions: {
 				abortEarly: true,

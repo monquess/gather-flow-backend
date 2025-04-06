@@ -9,12 +9,13 @@ import { ConfigFactory } from './abstract-config.factory';
 export class BullConfigFactory implements ConfigFactory<QueueOptions> {
 	constructor(private readonly configService: ConfigService<AppConfig, true>) {}
 
-	createOptions() {
+	createOptions(): QueueOptions {
 		return {
 			connection: {
 				host: this.configService.get<string>('REDIS_HOST'),
 				port: this.configService.get<number>('REDIS_PORT'),
 				password: this.configService.get<string>('REDIS_PASSWORD'),
+				db: 2,
 			},
 		};
 	}

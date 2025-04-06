@@ -11,13 +11,14 @@ import { ConfigFactory } from './abstract-config.factory';
 export class CacheConfigFactory implements ConfigFactory<CacheOptions> {
 	constructor(private readonly configService: ConfigService<AppConfig, true>) {}
 
-	createOptions() {
+	createOptions(): CacheOptions {
 		const options: RedisClientOptions = {
 			password: this.configService.get<string>('REDIS_PASSWORD'),
 			socket: {
 				host: this.configService.get<string>('REDIS_HOST'),
 				port: this.configService.get<number>('REDIS_PORT'),
 			},
+			database: 1,
 		};
 		return {
 			stores: [

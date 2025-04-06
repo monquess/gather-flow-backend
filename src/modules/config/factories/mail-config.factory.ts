@@ -11,7 +11,7 @@ import { ConfigFactory } from './abstract-config.factory';
 export class MailConfigFactory implements ConfigFactory<MailOptions> {
 	constructor(private readonly configService: ConfigService<AppConfig, true>) {}
 
-	createOptions() {
+	createOptions(): MailOptions {
 		return {
 			transport: {
 				host: this.configService.get<string>('MAIL_HOST'),
