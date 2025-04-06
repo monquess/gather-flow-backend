@@ -15,12 +15,11 @@ export class CacheInterceptor implements NestInterceptor {
 
 	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
 		const request = context.switchToHttp().getRequest<Request>();
-
-		if (request.method !== 'GET') {
-			return next.handle();
-		}
-
 		const key = this.trackBy(request);
+
+		if (['POST', 'PATCH', 'DELETE'].includes(request.method)) {
+			return from(this.cache.clear()).pipe(switchMap(() => next.handle()));
+		}
 
 		return from(this.cache.get(key)).pipe(
 			catchError(() => next.handle()),
@@ -28,6 +27,7 @@ export class CacheInterceptor implements NestInterceptor {
 				if (cached) {
 					return of(cached);
 				}
+
 				return next
 					.handle()
 					.pipe(
