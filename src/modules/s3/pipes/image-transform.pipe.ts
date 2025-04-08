@@ -8,12 +8,17 @@ import * as sharp from 'sharp';
 
 @Injectable()
 export class ImageTransformPipe
-	implements PipeTransform<Express.Multer.File, Promise<Express.Multer.File>>
+	implements
+		PipeTransform<Express.Multer.File, Promise<Express.Multer.File | undefined>>
 {
 	async transform(
-		image: Express.Multer.File,
+		image: Express.Multer.File | undefined,
 		_metadata: ArgumentMetadata
-	): Promise<Express.Multer.File> {
+	): Promise<Express.Multer.File | undefined> {
+		if (!image) {
+			return undefined;
+		}
+
 		try {
 			const buffer = await sharp(image.buffer)
 				.resize({

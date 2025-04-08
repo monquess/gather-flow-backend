@@ -31,6 +31,7 @@ model Company {
   location    String          @db.VarChar(255)
   createdAt   DateTime        @default(now()) @map("created_at")
   users       CompanyMember[]
+  events      Event[]
 
   @@map("companies")
 }
@@ -47,6 +48,29 @@ model CompanyMember {
   @@map("company_members")
 }
 
+model Event {
+  id                 Int                @id @default(autoincrement())
+  title              String             @db.VarChar(255)
+  description        String?
+  format             Format
+  theme              Theme
+  location           String             @db.VarChar(255)
+  ticketPrice        Decimal            @map("ticket_price") @db.Decimal(10, 2)
+  ticketsQuantity    Int                @map("tickets_quantity")
+  poster             String
+  visitorsVisibility VisitorsVisibility @default(EVERYONE) @map("visitors_visibillity")
+  status             EventStatus        @default(DRAFT)
+  startDate          DateTime           @map("start_date")
+  endDate            DateTime?          @map("end_date")
+  publishDate        DateTime?          @map("publish_date")
+  createdAt          DateTime           @default(now()) @map("created_at")
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int     @map("company_id")
+
+  @@map("events")
+}
+
 enum Provider {
   LOCAL
   GOOGLE
@@ -55,4 +79,29 @@ enum Provider {
 enum CompanyRole {
   ADMIN
   MEMBER
+}
+
+enum Format {
+  CONFERENCE
+  LECTURE
+  WORKSHOP
+  FEST
+  OTHER
+}
+
+enum Theme {
+  BUSINESS
+  POLITICS
+  PSYCHOLOGY
+  OTHER
+}
+
+enum VisitorsVisibility {
+  EVERYONE
+  VISITOR
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
 }

@@ -3,6 +3,7 @@ import Seeder from './abstract.seeder';
 import UserSeeder from './user.seeder';
 import CompanySeeder from './company.seeder';
 import CompanyMemberSeeder from './company-member.seeder';
+import EventSeeder from './event.seeder';
 
 class DatabaseSeeder extends Seeder {
 	private seeders: Seeder[];
@@ -13,6 +14,7 @@ class DatabaseSeeder extends Seeder {
 			new UserSeeder(this.prisma),
 			new CompanySeeder(this.prisma),
 			new CompanyMemberSeeder(this.prisma),
+			new EventSeeder(this.prisma),
 		];
 	}
 

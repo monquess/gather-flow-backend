@@ -124,6 +124,9 @@ export class EnvironmentVariables {
 	readonly DEFAULT_AVATAR_PATH: string;
 
 	@IsString()
+	readonly DEFAULT_POSTER_PATH: string;
+
+	@IsString()
 	readonly GOOGLE_CLIENT_ID: string;
 
 	@IsString()

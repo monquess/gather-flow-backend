@@ -14,6 +14,7 @@ import {
 import { CompanyEntity } from '../entities/company.entity';
 import { ApiPaginatedResponse } from '@common/pagination/api-paginated-response';
 import { CompanyMemberEntity } from '../entities/company-member.entity';
+import { EventEntity } from '@modules/event/entities/event.entity';
 
 export const ApiCompanyFindAll = () =>
 	applyDecorators(
@@ -68,6 +69,30 @@ export const ApiCompanyMemberCreate = () =>
 		})
 	);
 
+export const ApiEventCreate = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Create event' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'company id',
+		}),
+		ApiParam({
+			name: 'eventId',
+			description: 'event id',
+		}),
+		ApiCreatedResponse({ type: EventEntity }),
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiNotFoundResponse({
+			description: 'Event not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
+	);
+
 export const ApiCompanyUpdate = () =>
 	applyDecorators(
 		ApiAuth(),
@@ -106,6 +131,30 @@ export const ApiCompanyMemberUpdateRole = () =>
 		})
 	);
 
+export const ApiEventUpdate = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Update event' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'company id',
+		}),
+		ApiParam({
+			name: 'eventId',
+			description: 'event id',
+		}),
+		ApiOkResponse({ type: EventEntity }),
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiNotFoundResponse({
+			description: 'Event not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
+	);
+
 export const ApiCompanyRemove = () =>
 	applyDecorators(
 		ApiAuth(),
@@ -137,6 +186,30 @@ export const ApiCompanyMemberRemove = () =>
 		}),
 		ApiNotFoundResponse({
 			description: 'User not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
+	);
+
+export const ApiEventRemove = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Delete event' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'company id',
+		}),
+		ApiParam({
+			name: 'eventId',
+			description: 'event id',
+		}),
+		ApiNoContentResponse(),
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiNotFoundResponse({
+			description: 'Event not found',
 		}),
 		ApiForbiddenResponse({
 			description: 'Access denied',
