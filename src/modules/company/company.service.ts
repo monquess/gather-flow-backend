@@ -1,34 +1,39 @@
-import { PrismaService } from '@modules/prisma/prisma.service';
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { CompanyEntity } from './entities/company.entity';
-import { FilteringOptionsDto } from './dto/filtering-options.dto';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
+import { InjectQueue } from '@nestjs/bullmq';
+import { CompanyRole, EventStatus, Prisma, User } from '@prisma/client';
+
+import { Job, Queue } from 'bullmq';
+
 import { getPaginationMeta } from '@common/pagination/paginated-metadata';
 import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
 import { Paginated } from '@common/pagination/paginated';
-import { CompanyRole, EventStatus, Prisma, User } from '@prisma/client';
+
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { CreateCompanyMemberDto } from './dto/create-company-member.dto';
-import { CompanyMemberEntity } from './entities/company-member.entity';
+import { FilteringOptionsDto } from './dto/filtering-options.dto';
 import { UpdateCompanyMemberRoleDto } from './dto/update-company-member-role.dto';
+import { CompanyMemberEntity } from './entities/company-member.entity';
+import { CompanyEntity } from './entities/company.entity';
+import { PublishEventJobData } from './interfaces/publish-event-job-data.interface';
+
 import { CreateEventDto } from '@modules/company/dto/create-event.dto';
 import { S3Service } from '@modules/s3/s3.service';
 import { EventEntity } from '@modules/event/entities/event.entity';
 import { UpdateEventDto } from '@modules/company/dto/update-event.dto';
 import { EventService } from '@modules/event/event.service';
-import { ConfigService } from '@nestjs/config';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
-import { Job, Queue } from 'bullmq';
-import { InjectQueue } from '@nestjs/bullmq';
-import { PublishEventJobData } from './interfaces/publish-event-job-data.interface';
+import { PrismaService } from '@modules/prisma/prisma.service';
+import { AppConfig, appConfig } from '@modules/config/configs';
 
 @Injectable()
 export class CompanyService {
 	constructor(
+		@Inject(appConfig.KEY)
+		private readonly config: ConfigType<AppConfig>,
 		private readonly prisma: PrismaService,
 		private readonly s3Service: S3Service,
 		private readonly eventService: EventService,
-		private readonly configService: ConfigService<EnvironmentVariables, true>,
 		@InjectQueue('publishEvent') private publishQueue: Queue
 	) {}
 
@@ -124,7 +129,7 @@ export class CompanyService {
 			throw new ForbiddenException('Access denied');
 		}
 
-		let posterUrl = this.configService.get<string>('DEFAULT_POSTER_PATH');
+		let posterUrl = this.config.defaults.poster;
 		if (file) {
 			const posterData = await this.s3Service.uploadFile('posters', file);
 			posterUrl = posterData.url;
@@ -226,9 +231,7 @@ export class CompanyService {
 		}
 
 		if (file) {
-			if (
-				event.poster !== this.configService.get<string>('DEFAULT_POSTER_PATH')
-			) {
+			if (event.poster !== this.config.defaults.poster) {
 				await this.s3Service.deleteFile(event.poster);
 			}
 
@@ -335,9 +338,7 @@ export class CompanyService {
 			throw new ForbiddenException('Access denied');
 		}
 
-		if (
-			event.poster !== this.configService.get<string>('DEFAULT_POSTER_PATH')
-		) {
+		if (event.poster !== this.config.defaults.poster) {
 			await this.s3Service.deleteFile(event.poster);
 		}
 

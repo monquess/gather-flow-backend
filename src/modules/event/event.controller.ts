@@ -1,14 +1,16 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
-import { EventService } from './event.service';
+
 import { Public } from '@common/decorators/public.decorator';
 import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
-import { FilteringOptionsDto } from './dto/filtering-options.dto';
-import { EventEntity } from './entities/event.entity';
 import { Paginated } from '@common/pagination/paginated';
+
 import {
 	ApiEventFindAll,
 	ApiEventFindById,
 } from './decorators/api-event.decorator';
+import { FilteringOptionsDto } from './dto/filtering-options.dto';
+import { EventEntity } from './entities/event.entity';
+import { EventService } from './event.service';
 
 @Controller('events')
 export class EventController {

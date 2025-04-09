@@ -10,6 +10,8 @@ import { UserModule } from './user/user.module';
 import { S3Module } from './s3/s3.module';
 import { NotificationModule } from './notification/notification.module';
 import { MailModule } from './mail/mail.module';
+import { CompanyModule } from './company/company.module';
+import { EventModule } from './event/event.module';
 import { ConfigModule } from './config/config.module';
 import {
 	CacheConfigFactory,
@@ -39,21 +41,12 @@ import {
 			},
 			inject: [BullConfigFactory],
 		}),
+		ConfigModule,
 		PrismaModule,
 		UserModule,
 		AuthModule,
 		S3Module,
 		NotificationModule,
-		BullModule.forRootAsync({
-			useFactory: (configService: ConfigService) => ({
-				connection: {
-					host: configService.get<string>('REDIS_HOST'),
-					port: configService.get<number>('REDIS_PORT'),
-					password: configService.get<string>('REDIS_PASSWORD'),
-				},
-			}),
-			inject: [ConfigService],
-		}),
 		CompanyModule,
 		EventModule,
 	],

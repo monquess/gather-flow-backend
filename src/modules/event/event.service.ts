@@ -2,10 +2,12 @@ import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto'
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { FilteringOptionsDto } from './dto/filtering-options.dto';
+
 import { Paginated } from '@common/pagination/paginated';
-import { EventEntity } from './entities/event.entity';
 import { getPaginationMeta } from '@common/pagination/paginated-metadata';
+
+import { EventEntity } from './entities/event.entity';
+import { FilteringOptionsDto } from './dto/filtering-options.dto';
 
 @Injectable()
 export class EventService {

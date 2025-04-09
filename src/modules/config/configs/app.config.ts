@@ -33,6 +33,10 @@ export class AppEnvironmentVariables {
 	@IsString()
 	@IsNotEmpty()
 	readonly DEFAULT_AVATAR_PATH: string;
+
+	@IsString()
+	@IsNotEmpty()
+	readonly DEFAULT_POSTER_PATH: string;
 }
 
 interface IApp {
@@ -42,6 +46,7 @@ interface IApp {
 	clientUrl: string;
 	defaults: {
 		avatar: string;
+		poster: string;
 	};
 }
 
@@ -54,6 +59,7 @@ export const appConfig = registerAs<IApp>('app', async () => {
 		clientUrl: env.CLIENT_URL,
 		defaults: {
 			avatar: env.DEFAULT_AVATAR_PATH,
+			poster: env.DEFAULT_POSTER_PATH,
 		},
 	};
 });
