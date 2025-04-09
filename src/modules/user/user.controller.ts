@@ -35,8 +35,9 @@ import { FilteringOptionsDto, UpdateUserDto, UpdatePasswordDto } from './dto';
 import { ImageTransformPipe } from '@modules/s3/pipes/image-transform.pipe';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
+import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
 
-@UseInterceptors(ClassSerializerInterceptor)
+@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
 @SerializeOptions({ type: UserEntity })
 @Controller('users')
 export class UserController {

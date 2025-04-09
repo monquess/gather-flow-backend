@@ -5,7 +5,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from '@modules/app.module';
-import { swaggerConfig } from '@config/swagger.config';
+import { swaggerConfig } from '@common/helpers/swagger.config';
 import { corsOptions } from '@config/cors/cors.options';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
 import { PrismaExceptionFilter } from '@common/filters/prisma-exception.filter';

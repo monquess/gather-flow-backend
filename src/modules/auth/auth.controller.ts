@@ -5,13 +5,14 @@ import {
 	Get,
 	HttpCode,
 	HttpStatus,
+	Inject,
 	Post,
 	Res,
 	SerializeOptions,
 	UseGuards,
 	UseInterceptors,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigType } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
 
 import { Provider, User } from '@prisma/client';
@@ -43,7 +44,7 @@ import {
 } from './guards';
 
 import { UserEntity } from '@modules/user/entities/user.entity';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
+import { appConfig, AppConfig } from '@modules/config/configs/app.config';
 import { Public } from '@common/decorators/public.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
@@ -53,8 +54,9 @@ import { CurrentUser } from '@common/decorators/current-user.decorator';
 @Controller('auth')
 export class AuthController {
 	constructor(
-		private readonly authService: AuthService,
-		private readonly configService: ConfigService<EnvironmentVariables, true>
+		@Inject(appConfig.KEY)
+		private readonly config: ConfigType<AppConfig>,
+		private readonly authService: AuthService
 	) {}
 
 	@ApiAuthRegister()
@@ -98,7 +100,7 @@ export class AuthController {
 			Provider.GOOGLE,
 			res
 		);
-		const url = this.configService.get<string>('CLIENT_URL');
+		const url = this.config.clientUrl;
 
 		return res.redirect(`${url}/google-success?accessToken=${accessToken}`);
 	}
