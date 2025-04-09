@@ -1,14 +1,14 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 
 import * as bcrypt from 'bcryptjs';
 import { Request } from 'express';
 
-import { AppConfig } from '@modules/config/env/app.config';
 import { RedisService } from '@modules/redis/redis.service';
 import { PrismaService } from '@modules/prisma/prisma.service';
+import { authConfig, AuthConfig } from '@modules/config/configs';
 
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { TOKEN_PREFIXES } from '../constants/token-prefixes.constant';
@@ -20,7 +20,8 @@ export class JwtRefreshStrategy extends PassportStrategy(
 	'jwt-refresh'
 ) {
 	constructor(
-		private readonly config: ConfigService<AppConfig, true>,
+		@Inject(authConfig.KEY)
+		private readonly config: ConfigType<AuthConfig>,
 		private readonly prisma: PrismaService,
 		private readonly redis: RedisService
 	) {
@@ -31,7 +32,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
 				},
 			]),
 			ignoreExpiration: false,
-			secretOrKey: config.get<string>('JWT_REFRESH_SECRET'),
+			secretOrKey: config.jwt.refresh.secret,
 			passReqToCallback: true,
 		});
 	}

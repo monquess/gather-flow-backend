@@ -3,12 +3,13 @@ import {
 	CanActivate,
 	ExecutionContext,
 	ForbiddenException,
+	Inject,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
+import { ConfigType } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
-import { AppConfig } from '@modules/config/env/app.config';
+import { authConfig, AuthConfig } from '@modules/config/configs';
 
 interface RecaptchaResponse {
 	success: boolean;
@@ -19,7 +20,8 @@ export class RecaptchaGuard implements CanActivate {
 	protected readonly url = 'https://www.google.com/recaptcha/api/siteverify';
 
 	constructor(
-		private readonly configService: ConfigService<AppConfig, true>,
+		@Inject(authConfig.KEY)
+		private readonly config: ConfigType<AuthConfig>,
 		private readonly httpService: HttpService
 	) {}
 
@@ -34,7 +36,7 @@ export class RecaptchaGuard implements CanActivate {
 		const { data } = await firstValueFrom(
 			this.httpService.post<RecaptchaResponse>(this.url, null, {
 				params: {
-					secret: this.configService.get<string>('GOOGLE_RECAPTCHA_SECRET_KEY'),
+					secret: this.config.recaptcha.secret,
 					response: captcha,
 				},
 			})

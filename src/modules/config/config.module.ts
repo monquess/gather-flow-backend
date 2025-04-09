@@ -1,23 +1,34 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
 
-import { validate } from '@modules/config/env/app.config';
 import {
 	CacheConfigFactory,
 	BullConfigFactory,
 	MailConfigFactory,
 	RedisConfigFactory,
 } from './factories';
+import {
+	appConfig,
+	redisConfig,
+	mailConfig,
+	authConfig,
+	storageConfig,
+	databaseConfig,
+} from './configs';
 
 @Global()
 @Module({
 	imports: [
 		NestConfigModule.forRoot({
 			cache: true,
-			validate,
-			validationOptions: {
-				abortEarly: true,
-			},
+			load: [
+				appConfig,
+				redisConfig,
+				mailConfig,
+				authConfig,
+				storageConfig,
+				databaseConfig,
+			],
 		}),
 	],
 	providers: [

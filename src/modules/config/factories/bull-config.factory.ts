@@ -1,20 +1,24 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 
 import { QueueOptions } from 'bullmq';
-import { AppConfig } from '@modules/config/env/app.config';
+
 import { ConfigFactory } from './abstract-config.factory';
+import { redisConfig, RedisConfig } from '../configs/redis.config';
 
 @Injectable()
 export class BullConfigFactory implements ConfigFactory<QueueOptions> {
-	constructor(private readonly configService: ConfigService<AppConfig, true>) {}
+	constructor(
+		@Inject(redisConfig.KEY)
+		private readonly config: ConfigType<RedisConfig>
+	) {}
 
 	createOptions(): QueueOptions {
 		return {
 			connection: {
-				host: this.configService.get<string>('REDIS_HOST'),
-				port: this.configService.get<number>('REDIS_PORT'),
-				password: this.configService.get<string>('REDIS_PASSWORD'),
+				host: this.config.host,
+				port: this.config.port,
+				password: this.config.password,
 				db: 2,
 			},
 		};

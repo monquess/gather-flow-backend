@@ -1,32 +1,36 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 
 import { CacheOptions } from '@nestjs/cache-manager';
 import KeyvRedis, { Keyv, RedisClientOptions } from '@keyv/redis';
 
-import { AppConfig } from '@modules/config/env/app.config';
 import { ConfigFactory } from './abstract-config.factory';
+import { redisConfig, RedisConfig } from '../configs/redis.config';
 
 @Injectable()
 export class CacheConfigFactory implements ConfigFactory<CacheOptions> {
-	constructor(private readonly configService: ConfigService<AppConfig, true>) {}
+	constructor(
+		@Inject(redisConfig.KEY)
+		private readonly config: ConfigType<RedisConfig>
+	) {}
 
 	createOptions(): CacheOptions {
 		const options: RedisClientOptions = {
-			password: this.configService.get<string>('REDIS_PASSWORD'),
+			password: this.config.password,
 			socket: {
-				host: this.configService.get<string>('REDIS_HOST'),
-				port: this.configService.get<number>('REDIS_PORT'),
+				host: this.config.host,
+				port: this.config.port,
 			},
 			database: 1,
 		};
+
 		return {
 			stores: [
 				new Keyv({
 					store: new KeyvRedis(options),
 					namespace: 'cache',
 					useKeyPrefix: false,
-					ttl: this.configService.get<number>('CACHE_TTL'),
+					ttl: this.config.cache.ttl,
 				}),
 			],
 		};
