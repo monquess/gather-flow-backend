@@ -1,11 +1,19 @@
 import { registerAs } from '@nestjs/config';
-import { IsBoolean, IsNumber, IsString, Max, Min } from 'class-validator';
+import {
+	IsBoolean,
+	IsNotEmpty,
+	IsNumber,
+	IsString,
+	Max,
+	Min,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 import { validateConfig } from './validate-config';
 
 class MailEnvironmentVariables {
 	@IsString()
+	@IsNotEmpty()
 	readonly MAIL_HOST: string;
 
 	@IsNumber()
@@ -15,18 +23,22 @@ class MailEnvironmentVariables {
 	readonly MAIL_PORT: number;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly MAIL_USERNAME: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly MAIL_PASSWORD: string;
 
 	@IsBoolean()
 	readonly MAIL_ENCRYPTION: boolean;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly MAIL_FROM_ADDRESS: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly MAIL_FROM_NAME: string;
 }
 
@@ -44,7 +56,7 @@ interface IMail {
 }
 
 export const mailConfig = registerAs<IMail>('mail', async () => {
-	const env = await validateConfig(process.env, MailEnvironmentVariables);
+	const env = await validateConfig(MailEnvironmentVariables);
 	return {
 		host: env.MAIL_HOST,
 		port: env.MAIL_PORT,

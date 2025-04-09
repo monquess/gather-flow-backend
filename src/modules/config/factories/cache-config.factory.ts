@@ -4,7 +4,7 @@ import { ConfigType } from '@nestjs/config';
 import { CacheOptions } from '@nestjs/cache-manager';
 import KeyvRedis, { Keyv, RedisClientOptions } from '@keyv/redis';
 
-import { ConfigFactory } from './abstract-config.factory';
+import { ConfigFactory } from '../interface/config-factory.interface';
 import { redisConfig, RedisConfig } from '../configs/redis.config';
 
 @Injectable()

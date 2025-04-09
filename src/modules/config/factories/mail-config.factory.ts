@@ -4,7 +4,7 @@ import { ConfigType } from '@nestjs/config';
 import * as path from 'path';
 
 import { MailOptions } from '@modules/mail/interfaces/mail-options.interface';
-import { ConfigFactory } from './abstract-config.factory';
+import { ConfigFactory } from '../interface/config-factory.interface';
 import { mailConfig, MailConfig } from '../configs/mail.config';
 
 @Injectable()

@@ -3,7 +3,7 @@ import { ConfigType } from '@nestjs/config';
 
 import { QueueOptions } from 'bullmq';
 
-import { ConfigFactory } from './abstract-config.factory';
+import { ConfigFactory } from '../interface/config-factory.interface';
 import { redisConfig, RedisConfig } from '../configs/redis.config';
 
 @Injectable()

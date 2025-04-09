@@ -1,22 +1,27 @@
 import { registerAs } from '@nestjs/config';
-import { IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 import { validateConfig } from './validate-config';
 
 class StorageEnvironmentVariables {
 	@IsString()
+	@IsNotEmpty()
 	readonly S3_ACCESS_KEY_ID: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly S3_SECRET_ACCESS_KEY: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly S3_REGION: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly S3_BUCKET_NAME: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly S3_ENDPOINT: string;
 }
 
@@ -31,7 +36,7 @@ interface IStorage {
 }
 
 export const storageConfig = registerAs<IStorage>('storage', async () => {
-	const env = await validateConfig(process.env, StorageEnvironmentVariables);
+	const env = await validateConfig(StorageEnvironmentVariables);
 	return {
 		access: {
 			id: env.S3_ACCESS_KEY_ID,

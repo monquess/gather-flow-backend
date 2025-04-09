@@ -1,34 +1,42 @@
 import { registerAs } from '@nestjs/config';
-import { IsString, IsNumber } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsPositive } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 import { validateConfig } from './validate-config';
 
 class AuthEnvironmentVariables {
 	@IsString()
+	@IsNotEmpty()
 	readonly JWT_ACCESS_SECRET: string;
 
 	@IsNumber()
+	@IsPositive()
 	@Transform(({ value }) => Number(value))
 	readonly JWT_ACCESS_EXPIRATION: number;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly JWT_REFRESH_SECRET: string;
 
 	@IsNumber()
+	@IsPositive()
 	@Transform(({ value }) => Number(value))
 	readonly JWT_REFRESH_EXPIRATION: number;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly GOOGLE_CLIENT_ID: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly GOOGLE_CLIENT_SECRET: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly GOOGLE_CALLBACK_URL: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly GOOGLE_RECAPTCHA_SECRET_KEY: string;
 }
 
@@ -54,7 +62,7 @@ interface IAuth {
 }
 
 export const authConfig = registerAs<IAuth>('auth', async () => {
-	const env = await validateConfig(process.env, AuthEnvironmentVariables);
+	const env = await validateConfig(AuthEnvironmentVariables);
 	return {
 		jwt: {
 			access: {

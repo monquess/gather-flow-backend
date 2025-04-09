@@ -1,5 +1,12 @@
 import { registerAs } from '@nestjs/config';
-import { IsEnum, IsString, IsNumber, Max, Min } from 'class-validator';
+import {
+	IsEnum,
+	IsString,
+	IsNumber,
+	Max,
+	Min,
+	IsNotEmpty,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 import { NodeEnv } from '@common/enum/node-env.enum';
@@ -16,12 +23,15 @@ export class AppEnvironmentVariables {
 	readonly PORT: number = 3000;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly APP_URL: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly CLIENT_URL: string;
 
 	@IsString()
+	@IsNotEmpty()
 	readonly DEFAULT_AVATAR_PATH: string;
 }
 
@@ -36,7 +46,7 @@ interface IApp {
 }
 
 export const appConfig = registerAs<IApp>('app', async () => {
-	const env = await validateConfig(process.env, AppEnvironmentVariables);
+	const env = await validateConfig(AppEnvironmentVariables);
 	return {
 		env: env.NODE_ENV,
 		port: env.PORT,

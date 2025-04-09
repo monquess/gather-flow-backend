@@ -2,8 +2,8 @@ import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
 export const validateConfig = async <T extends object>(
-	config: Record<string, unknown>,
-	cls: ClassConstructor<T>
+	cls: ClassConstructor<T>,
+	config: Record<string, unknown> = process.env
 ) => {
 	const validatedConfig = plainToInstance(cls, config, {
 		enableImplicitConversion: true,
