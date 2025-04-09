@@ -11,5 +11,5 @@ export class UpdateEventDto extends PartialType(CreateEventDto) {
 	})
 	@IsOptional()
 	@IsEnum(EventStatus)
-	status?: EventStatus;
+	readonly status?: EventStatus;
 }

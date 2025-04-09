@@ -4,11 +4,11 @@ import { IsEnum, IsOptional } from 'class-validator';
 
 export class CreateCompanyMemberDto {
 	@ApiProperty({
-		example: 'MEMBER',
 		type: String,
 		enum: CompanyRole,
+		example: CompanyRole.MEMBER,
 	})
 	@IsOptional()
 	@IsEnum(CompanyRole)
-	role?: CompanyRole;
+	readonly role?: CompanyRole;
 }

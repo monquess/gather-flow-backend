@@ -19,12 +19,10 @@ export class MailConfigFactory implements ConfigFactory<MailOptions> {
 			transport: {
 				host: this.config.host,
 				port: this.config.port,
-				...this.config.auth,
+				auth: this.config.auth,
 			},
 			defaults: {
-				from: {
-					...this.config.from,
-				},
+				from: this.config.from,
 			},
 			template: {
 				dir: path.join(process.cwd(), 'src', 'modules', 'mail', 'templates'),

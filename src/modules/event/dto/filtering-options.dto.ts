@@ -1,9 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Format, Theme, VisitorsVisibility } from '@prisma/client';
+import { EventStatus, Format, Theme, VisitorsVisibility } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
 	IsDate,
 	IsEnum,
+	IsNotEmpty,
 	IsOptional,
 	IsPositive,
 	IsString,
@@ -16,6 +17,7 @@ export class FilteringOptionsDto {
 	})
 	@IsOptional()
 	@IsString()
+	@IsNotEmpty()
 	title?: string;
 
 	@IsOptional()
@@ -25,6 +27,10 @@ export class FilteringOptionsDto {
 	@IsOptional()
 	@IsEnum(Theme)
 	theme?: Theme;
+
+	@IsOptional()
+	@IsEnum(EventStatus)
+	status?: EventStatus;
 
 	@IsOptional()
 	@IsEnum(VisitorsVisibility)
