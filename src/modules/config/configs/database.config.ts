@@ -1,7 +1,8 @@
 import { registerAs } from '@nestjs/config';
-import { validate } from './app.config';
 import { IsString, IsNumber, Min, Max } from 'class-validator';
 import { Transform } from 'class-transformer';
+
+import { validateConfig } from './validate-config';
 
 class DatabaseEnvironmentVariables {
 	@IsString()
@@ -35,8 +36,8 @@ interface IDatabase {
 	url: string;
 }
 
-export const databaseConfig = registerAs<IDatabase>('database', () => {
-	const env = validate(process.env, DatabaseEnvironmentVariables);
+export const databaseConfig = registerAs<IDatabase>('database', async () => {
+	const env = await validateConfig(process.env, DatabaseEnvironmentVariables);
 	return {
 		host: env.DATABASE_HOST,
 		port: env.DATABASE_PORT,

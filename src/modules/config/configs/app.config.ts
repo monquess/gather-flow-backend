@@ -1,18 +1,9 @@
-import {
-	IsEnum,
-	IsString,
-	IsNumber,
-	Max,
-	Min,
-	validateSync,
-} from 'class-validator';
-import {
-	ClassConstructor,
-	plainToInstance,
-	Transform,
-} from 'class-transformer';
-import { NodeEnv } from '@common/enum/node-env.enum';
 import { registerAs } from '@nestjs/config';
+import { IsEnum, IsString, IsNumber, Max, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
+
+import { NodeEnv } from '@common/enum/node-env.enum';
+import { validateConfig } from './validate-config';
 
 export class AppEnvironmentVariables {
 	@IsEnum(NodeEnv)
@@ -44,8 +35,8 @@ interface IApp {
 	};
 }
 
-export const appConfig = registerAs<IApp>('app', () => {
-	const env = validate(process.env, AppEnvironmentVariables);
+export const appConfig = registerAs<IApp>('app', async () => {
+	const env = await validateConfig(process.env, AppEnvironmentVariables);
 	return {
 		env: env.NODE_ENV,
 		port: env.PORT,
@@ -58,21 +49,3 @@ export const appConfig = registerAs<IApp>('app', () => {
 });
 
 export type AppConfig = typeof appConfig;
-
-export function validate<T extends object>(
-	config: Record<string, unknown>,
-	cls: ClassConstructor<T>
-) {
-	const validatedConfig = plainToInstance(cls, config, {
-		enableImplicitConversion: true,
-	});
-	const errors = validateSync(validatedConfig, {
-		skipMissingProperties: false,
-	});
-
-	if (errors.length > 0) {
-		throw new Error(errors.toString());
-	}
-
-	return validatedConfig;
-}

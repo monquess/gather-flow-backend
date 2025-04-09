@@ -1,7 +1,8 @@
 import { registerAs } from '@nestjs/config';
-import { validate } from './app.config';
 import { IsString, IsNumber, Min, Max } from 'class-validator';
 import { Transform } from 'class-transformer';
+
+import { validateConfig } from './validate-config';
 
 class RedisEnvironmentVariables {
 	@IsString()
@@ -30,8 +31,8 @@ interface IRedis {
 	};
 }
 
-export const redisConfig = registerAs<IRedis>('redis', () => {
-	const env = validate(process.env, RedisEnvironmentVariables);
+export const redisConfig = registerAs<IRedis>('redis', async () => {
+	const env = await validateConfig(process.env, RedisEnvironmentVariables);
 	return {
 		host: env.REDIS_HOST,
 		port: env.REDIS_PORT,

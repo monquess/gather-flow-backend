@@ -1,7 +1,8 @@
 import { registerAs } from '@nestjs/config';
-import { validate } from './app.config';
 import { IsBoolean, IsNumber, IsString, Max, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
+
+import { validateConfig } from './validate-config';
 
 class MailEnvironmentVariables {
 	@IsString()
@@ -42,8 +43,8 @@ interface IMail {
 	};
 }
 
-export const mailConfig = registerAs<IMail>('mail', () => {
-	const env = validate(process.env, MailEnvironmentVariables);
+export const mailConfig = registerAs<IMail>('mail', async () => {
+	const env = await validateConfig(process.env, MailEnvironmentVariables);
 	return {
 		host: env.MAIL_HOST,
 		port: env.MAIL_PORT,

@@ -1,6 +1,7 @@
 import { registerAs } from '@nestjs/config';
 import { IsString } from 'class-validator';
-import { validate } from './app.config';
+
+import { validateConfig } from './validate-config';
 
 class StorageEnvironmentVariables {
 	@IsString()
@@ -29,8 +30,8 @@ interface IStorage {
 	endpoint: string;
 }
 
-export const storageConfig = registerAs<IStorage>('storage', () => {
-	const env = validate(process.env, StorageEnvironmentVariables);
+export const storageConfig = registerAs<IStorage>('storage', async () => {
+	const env = await validateConfig(process.env, StorageEnvironmentVariables);
 	return {
 		access: {
 			id: env.S3_ACCESS_KEY_ID,

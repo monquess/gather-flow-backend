@@ -1,7 +1,8 @@
 import { registerAs } from '@nestjs/config';
 import { IsString, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { validate } from './app.config';
+
+import { validateConfig } from './validate-config';
 
 class AuthEnvironmentVariables {
 	@IsString()
@@ -52,8 +53,8 @@ interface IAuth {
 	};
 }
 
-export const authConfig = registerAs<IAuth>('auth', () => {
-	const env = validate(process.env, AuthEnvironmentVariables);
+export const authConfig = registerAs<IAuth>('auth', async () => {
+	const env = await validateConfig(process.env, AuthEnvironmentVariables);
 	return {
 		jwt: {
 			access: {
