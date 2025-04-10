@@ -1,15 +1,23 @@
 import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma, User } from '@prisma/client';
 import { FilteringOptionsDto } from './dto/filtering-options.dto';
 import { Paginated } from '@common/pagination/paginated';
 import { EventEntity } from './entities/event.entity';
 import { getPaginationMeta } from '@common/pagination/paginated-metadata';
+import { CreateTicketDto } from './dto/create-ticket.dto';
+import { StripeService } from '@modules/payment/stripe.service';
+import { TicketService } from '@modules/ticket/ticket.service';
+import { CreateEventTicketResponseDto } from './dto/create-event-ticket-response.dto';
 
 @Injectable()
 export class EventService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly stripeService: StripeService,
+		private readonly ticketService: TicketService
+	) {}
 
 	async findAll(
 		{
@@ -76,5 +84,80 @@ export class EventService {
 		return this.prisma.event.findUniqueOrThrow({
 			where: { id },
 		});
+	}
+
+	async createEventTicket(
+		eventId: number,
+		dto: CreateTicketDto,
+		user: User
+	): Promise<CreateEventTicketResponseDto> {
+		const event = await this.findById(eventId);
+		const availableTickets = event.ticketsQuantity - event.ticketsSold;
+
+		if (dto.quantity >= availableTickets) {
+			throw new BadRequestException(
+				`Only ${availableTickets} tickets remaining`
+			);
+		}
+
+		// handle promocode
+
+		const result = await this.prisma.$transaction(async (prisma) => {
+			const tickets = await Promise.all(
+				Array(dto.quantity)
+					.fill(null)
+					.map(() =>
+						prisma.ticket.create({
+							data: {
+								userId: user.id,
+								eventId,
+								ticketCode: this.ticketService.generateTicketCode(),
+								finalPrice: event.ticketPrice,
+								purchaseDate: new Date(),
+							},
+						})
+					)
+			);
+
+			await prisma.event.update({
+				where: {
+					id: eventId,
+				},
+				data: {
+					ticketsSold: {
+						increment: dto.quantity,
+					},
+				},
+			});
+
+			const session = await this.stripeService.createCheckoutSession(
+				event.title,
+				event.ticketPrice,
+				dto.quantity,
+				{
+					userId: user.id.toString(),
+					eventId: eventId.toString(),
+					ticketIds: tickets.map((t) => t.id).join(','),
+				}
+			);
+
+			const payment = await prisma.payment.create({
+				data: {
+					userId: user.id,
+					transactionId: session.id,
+				},
+			});
+
+			await prisma.paymentTicket.createMany({
+				data: tickets.map((ticket) => ({
+					paymentId: payment.id,
+					ticketId: ticket.id,
+				})),
+			});
+
+			return { checkoutUrl: session.url, sessionId: session.id };
+		});
+
+		return result;
 	}
 }

@@ -12,7 +12,9 @@ import { PrismaExceptionFilter } from '@common/filters/prisma-exception.filter';
 import { validationExceptionFactory } from '@common/pipes/validation/validation-exception.factory';
 
 async function bootstrap() {
-	const app = await NestFactory.create<NestExpressApplication>(AppModule);
+	const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+		rawBody: true,
+	});
 	const prefix = 'api';
 
 	app.set('trust proxy', true);

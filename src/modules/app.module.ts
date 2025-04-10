@@ -24,6 +24,8 @@ import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.inte
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CompanyModule } from './company/company.module';
 import { EventModule } from './event/event.module';
+import { TicketModule } from './ticket/ticket.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
 	imports: [
@@ -102,6 +104,8 @@ import { EventModule } from './event/event.module';
 		}),
 		CompanyModule,
 		EventModule,
+		TicketModule,
+		PaymentModule,
 	],
 	providers: [
 		{

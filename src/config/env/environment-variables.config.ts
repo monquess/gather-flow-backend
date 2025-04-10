@@ -137,6 +137,15 @@ export class EnvironmentVariables {
 
 	@IsString()
 	readonly GOOGLE_RECAPTCHA_SECRET_KEY: string;
+
+	@IsString()
+	readonly STRIPE_PUBLIC_KEY: string;
+
+	@IsString()
+	readonly STRIPE_SECRET_KEY: string;
+
+	@IsString()
+	readonly STRIPE_WEBHOOK_KEY: string;
 }
 
 export function validate(config: Record<string, unknown>) {
