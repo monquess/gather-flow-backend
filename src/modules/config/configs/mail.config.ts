@@ -1,8 +1,8 @@
 import { registerAs } from '@nestjs/config';
 import {
 	IsBoolean,
+	IsInt,
 	IsNotEmpty,
-	IsNumber,
 	IsString,
 	Max,
 	Min,
@@ -16,7 +16,7 @@ class MailEnvironmentVariables {
 	@IsNotEmpty()
 	readonly MAIL_HOST: string;
 
-	@IsNumber()
+	@IsInt()
 	@Min(0)
 	@Max(65535)
 	@Transform(({ value }) => Number(value))

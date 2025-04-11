@@ -1,5 +1,5 @@
 import { registerAs } from '@nestjs/config';
-import { IsString, IsNumber, Min, Max, IsNotEmpty } from 'class-validator';
+import { IsString, Min, Max, IsNotEmpty, IsInt } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 import { validateConfig } from './validate-config';
@@ -21,7 +21,7 @@ class ElasticsearchEnvironmentVariables {
 	@IsNotEmpty()
 	readonly ELASTICSEARCH_PASSWORD: string;
 
-	@IsNumber()
+	@IsInt()
 	@Min(0)
 	@Max(65535)
 	@Transform(({ value }) => Number(value))

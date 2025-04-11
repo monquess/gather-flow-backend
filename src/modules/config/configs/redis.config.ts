@@ -1,11 +1,11 @@
 import { registerAs } from '@nestjs/config';
 import {
 	IsString,
-	IsNumber,
 	Min,
 	Max,
 	IsNotEmpty,
 	IsPositive,
+	IsInt,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -16,7 +16,7 @@ class RedisEnvironmentVariables {
 	@IsNotEmpty()
 	readonly REDIS_HOST: string;
 
-	@IsNumber()
+	@IsInt()
 	@Min(0)
 	@Max(65535)
 	@Transform(({ value }) => Number(value))
@@ -26,7 +26,7 @@ class RedisEnvironmentVariables {
 	@IsNotEmpty()
 	readonly REDIS_PASSWORD: string;
 
-	@IsNumber()
+	@IsInt()
 	@IsPositive()
 	@Transform(({ value }) => Number(value))
 	readonly CACHE_TTL: number;

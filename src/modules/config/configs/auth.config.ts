@@ -1,5 +1,5 @@
 import { registerAs } from '@nestjs/config';
-import { IsString, IsNumber, IsNotEmpty, IsPositive } from 'class-validator';
+import { IsString, IsNotEmpty, IsPositive, IsInt } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 import { validateConfig } from './validate-config';
@@ -9,7 +9,7 @@ class AuthEnvironmentVariables {
 	@IsNotEmpty()
 	readonly JWT_ACCESS_SECRET: string;
 
-	@IsNumber()
+	@IsInt()
 	@IsPositive()
 	@Transform(({ value }) => Number(value))
 	readonly JWT_ACCESS_EXPIRATION: number;
@@ -18,7 +18,7 @@ class AuthEnvironmentVariables {
 	@IsNotEmpty()
 	readonly JWT_REFRESH_SECRET: string;
 
-	@IsNumber()
+	@IsInt()
 	@IsPositive()
 	@Transform(({ value }) => Number(value))
 	readonly JWT_REFRESH_EXPIRATION: number;
