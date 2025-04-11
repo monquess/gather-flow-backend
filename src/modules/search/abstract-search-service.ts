@@ -1,0 +1,44 @@
+import { ElasticsearchService } from '@nestjs/elasticsearch';
+
+type Document = Record<string, unknown> & { id: number };
+
+export abstract class SearchService<T extends Document> {
+	protected readonly _index: string;
+
+	constructor(
+		protected readonly es: ElasticsearchService,
+		index: string
+	) {
+		this._index = index;
+	}
+
+	abstract search(
+		query: Record<string, unknown>,
+		page: number,
+		limit: number
+	): Promise<T[]>;
+
+	async index(document: T): Promise<void> {
+		await this.es.index({
+			index: this._index,
+			body: document,
+		});
+	}
+
+	async update(document: T): Promise<void> {
+		const { id, ...body } = document;
+
+		await this.es.update({
+			index: this._index,
+			id: id.toString(),
+			body,
+		});
+	}
+
+	async remove(document: T): Promise<void> {
+		await this.es.delete({
+			index: this._index,
+			id: document.id.toString(),
+		});
+	}
+}

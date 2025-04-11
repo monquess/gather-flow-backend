@@ -18,6 +18,7 @@ import {
 	MailConfigFactory,
 	BullConfigFactory,
 } from './config/factories';
+import { SearchModule } from './search/search.module';
 
 @Module({
 	imports: [
@@ -49,6 +50,7 @@ import {
 		NotificationModule,
 		CompanyModule,
 		EventModule,
+		SearchModule,
 	],
 	providers: [
 		{

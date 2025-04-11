@@ -25,6 +25,7 @@ import { UpdateEventDto } from '@modules/company/dto/update-event.dto';
 import { EventService } from '@modules/event/event.service';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { AppConfig, appConfig } from '@modules/config/configs';
+import { EventSearchService } from '@modules/search/event-search.service';
 
 @Injectable()
 export class CompanyService {
@@ -34,7 +35,9 @@ export class CompanyService {
 		private readonly prisma: PrismaService,
 		private readonly s3Service: S3Service,
 		private readonly eventService: EventService,
-		@InjectQueue('publishEvent') private publishQueue: Queue
+		private readonly eventSearchService: EventSearchService,
+		@InjectQueue('publishEvent')
+		private readonly publishQueue: Queue
 	) {}
 
 	async findAll(
@@ -53,7 +56,9 @@ export class CompanyService {
 				where,
 				take: limit,
 				skip: limit * (page - 1),
-				orderBy: { createdAt: 'asc' },
+				orderBy: {
+					createdAt: 'asc',
+				},
 				include: {
 					users: true,
 				},
@@ -144,6 +149,7 @@ export class CompanyService {
 					status: dto.publishDate ? EventStatus.DRAFT : EventStatus.PUBLISHED,
 				},
 			});
+			await this.eventSearchService.index(newEvent);
 
 			if (dto.publishDate) {
 				await this.publishQueue.add(
@@ -249,10 +255,10 @@ export class CompanyService {
 					poster: posterUrl,
 				},
 			});
+			await this.eventSearchService.update(newEvent);
 
-			const jobId = `event-${eventId}`;
 			const job = (await this.publishQueue.getJob(
-				jobId
+				`event-${eventId}`
 			)) as Job<PublishEventJobData>;
 
 			if (dto.status === EventStatus.PUBLISHED) {
@@ -343,11 +349,15 @@ export class CompanyService {
 		}
 
 		await this.prisma.$transaction(async (prisma) => {
-			await prisma.event.delete({ where: { id: eventId } });
+			const deletedEvent = await prisma.event.delete({
+				where: {
+					id: eventId,
+				},
+			});
+			await this.eventSearchService.remove(deletedEvent);
 
-			const jobId = `event-${eventId}`;
 			const job = (await this.publishQueue.getJob(
-				jobId
+				`event-${eventId}`
 			)) as Job<PublishEventJobData>;
 
 			if (job) {

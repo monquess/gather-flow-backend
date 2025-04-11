@@ -89,6 +89,7 @@ export class CreateEventDto {
 
 	@ApiProperty({
 		type: String,
+		format: 'date-time',
 		example: '2025-03-07T16:30:00.000Z',
 	})
 	@IsISO8601({
@@ -98,6 +99,7 @@ export class CreateEventDto {
 
 	@ApiProperty({
 		type: String,
+		format: 'date-time',
 		example: '2025-03-09T16:17:53.019Z',
 		required: false,
 	})
@@ -110,6 +112,7 @@ export class CreateEventDto {
 
 	@ApiProperty({
 		type: String,
+		format: 'date-time',
 		example: '2025-03-07T20:30:00.000Z',
 		required: false,
 	})

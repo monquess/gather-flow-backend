@@ -118,7 +118,7 @@ export class AuthService {
 			email
 		);
 
-		if (token !== verifyToken) {
+		if (token?.toLowerCase() !== verifyToken.toLowerCase()) {
 			throw new BadRequestException('Invalid email or token');
 		}
 
@@ -143,7 +143,7 @@ export class AuthService {
 			email
 		);
 
-		if (token !== resetToken) {
+		if (token?.toLowerCase() !== resetToken.toLowerCase()) {
 			await this.checkResetPasswordRetries(email);
 			throw new BadRequestException('Invalid email or token');
 		}

@@ -11,19 +11,22 @@ import {
 import { FilteringOptionsDto } from './dto/filtering-options.dto';
 import { EventEntity } from './entities/event.entity';
 import { EventService } from './event.service';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { User } from '@prisma/client';
 
 @Controller('events')
 export class EventController {
 	constructor(private readonly eventService: EventService) {}
 
 	@ApiEventFindAll()
-	@Public()
+	// @Public()
 	@Get()
 	findAll(
 		@Query() filteringOptions: FilteringOptionsDto,
-		@Query() paginationOptions: PaginationOptionsDto
+		@Query() paginationOptions: PaginationOptionsDto,
+		@CurrentUser() user: User
 	): Promise<Paginated<EventEntity>> {
-		return this.eventService.findAll(filteringOptions, paginationOptions);
+		return this.eventService.findAll(filteringOptions, paginationOptions, user);
 	}
 
 	@ApiEventFindById()

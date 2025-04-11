@@ -12,7 +12,7 @@ import { Transform } from 'class-transformer';
 import { NodeEnv } from '@common/enum/node-env.enum';
 import { validateConfig } from './validate-config';
 
-export class AppEnvironmentVariables {
+class AppEnvironmentVariables {
 	@IsEnum(NodeEnv)
 	readonly NODE_ENV: NodeEnv = NodeEnv.DEV;
 

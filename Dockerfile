@@ -1,6 +1,6 @@
-FROM node:22.11.0-alpine AS build
+FROM node:22.14.0-alpine AS build
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
@@ -12,18 +12,18 @@ COPY . .
 
 RUN npm run build
 
-FROM node:22.11.0-alpine AS production
+FROM node:22.14.0-alpine AS production
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
-COPY --chown=node:node --from=build /app/package.json /app/package-lock.json ./
-COPY --chown=node:node --from=build /app/dist ./dist
-COPY --chown=node:node --from=build /app/prisma ./prisma
+COPY --chown=node:node --from=build /usr/src/app/package.json /usr/src/app/package-lock.json ./
+COPY --chown=node:node --from=build /usr/src/app/dist ./dist
+COPY --chown=node:node --from=build /usr/src/app/prisma ./prisma
 
-RUN npx prisma generate
 RUN npm ci --omit=dev && npm cache clean --force
+RUN npx prisma generate
 
 EXPOSE 3000
 
