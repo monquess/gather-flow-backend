@@ -32,7 +32,7 @@ export class EventService {
 					company: {
 						users: {
 							some: {
-								userId: user.id,
+								userId: user?.id,
 								role: CompanyRole.ADMIN,
 							},
 						},

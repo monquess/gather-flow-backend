@@ -15,9 +15,22 @@ export const eventMapping: MappingTypeMapping = {
 		description: textProperty,
 		location: textProperty,
 		id: { type: 'keyword' },
-		companyId: { type: 'keyword' },
+		companyId: { type: 'integer' },
 		status: { type: 'keyword' },
-		startDate: { type: 'date' },
-		endDate: { type: 'date' },
+		format: { type: 'keyword' },
+		theme: { type: 'keyword' },
+		ticketPrice: {
+			type: 'scaled_float',
+			scaling_factor: 100,
+		},
+		ticketQuantity: { type: 'integer' },
+		startDate: {
+			type: 'date',
+			format: 'strict_date_optional_time',
+		},
+		endDate: {
+			type: 'date',
+			format: 'strict_date_optional_time',
+		},
 	},
-};
+} as const;

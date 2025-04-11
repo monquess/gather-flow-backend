@@ -1,6 +1,5 @@
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-
-type Document = Record<string, unknown> & { id: number };
+import { Document } from './interface/document.interface';
 
 export abstract class SearchService<T extends Document> {
 	protected readonly _index: string;

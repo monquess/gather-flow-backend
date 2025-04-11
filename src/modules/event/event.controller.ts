@@ -1,8 +1,11 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 
 import { Public } from '@common/decorators/public.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
 import { Paginated } from '@common/pagination/paginated';
+
+import { User } from '@prisma/client';
 
 import {
 	ApiEventFindAll,
@@ -11,15 +14,13 @@ import {
 import { FilteringOptionsDto } from './dto/filtering-options.dto';
 import { EventEntity } from './entities/event.entity';
 import { EventService } from './event.service';
-import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { User } from '@prisma/client';
 
 @Controller('events')
 export class EventController {
 	constructor(private readonly eventService: EventService) {}
 
 	@ApiEventFindAll()
-	// @Public()
+	@Public()
 	@Get()
 	findAll(
 		@Query() filteringOptions: FilteringOptionsDto,
