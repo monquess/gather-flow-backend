@@ -18,9 +18,11 @@ export abstract class SearchService<T extends Document> {
 	): Promise<T[]>;
 
 	async index(document: T): Promise<void> {
+		const { id, ...body } = document;
 		await this.es.index({
 			index: this._index,
-			body: document,
+			id: id.toString(),
+			body,
 		});
 	}
 
