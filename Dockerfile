@@ -1,4 +1,5 @@
-FROM node:22.14.0-alpine AS build
+# Base setup stage
+FROM node:22.14.0-alpine AS base
 
 WORKDIR /usr/src/app
 
@@ -8,10 +9,24 @@ COPY prisma ./prisma/
 RUN npm ci
 RUN npx prisma generate
 
-COPY . .
 
+# Build stage
+FROM base AS build
+
+COPY . .
 RUN npm run build
 
+
+# Development stage
+FROM build AS development
+
+ENV NODE_ENV=development
+EXPOSE 3000
+
+CMD ["npm", "run", "start:migrate:dev"]
+
+
+# Production stage
 FROM node:22.14.0-alpine AS production
 
 WORKDIR /usr/src/app
