@@ -1,4 +1,3 @@
-import { ApiAuth } from '@common/decorators/swagger/api-auth.decorator';
 import { applyDecorators } from '@nestjs/common';
 import {
 	ApiConflictResponse,
@@ -9,27 +8,37 @@ import {
 	ApiOkResponse,
 	ApiOperation,
 	ApiParam,
-	ApiQuery,
 } from '@nestjs/swagger';
-import { CompanyEntity } from '../entities/company.entity';
-import { ApiPaginatedResponse } from '@common/pagination/api-paginated-response';
-import { CompanyMemberEntity } from '../entities/company-member.entity';
+
+import { ApiAuth, ApiPaginatedResponse } from '@common/decorators';
+import {} from '@common/decorators/swagger/api-paginated-response';
 import { EventEntity } from '@modules/event/entities/event.entity';
+import { CompanyEntity } from '../entities/company.entity';
+import { CompanyMemberEntity } from '../entities/company-member.entity';
 
 export const ApiCompanyFindAll = () =>
 	applyDecorators(
 		ApiOperation({ summary: 'Get paginated companies' }),
-		ApiQuery({
-			name: 'name',
-			required: false,
-			type: String,
-		}),
 		ApiPaginatedResponse<CompanyEntity>(CompanyEntity)
+	);
+
+export const ApiCompanyFindEvents = () =>
+	applyDecorators(
+		ApiOperation({ summary: 'Get paginated company events' }),
+		ApiParam({
+			name: 'id',
+			description: 'company id',
+		}),
+		ApiPaginatedResponse<EventEntity>(EventEntity)
 	);
 
 export const ApiCompanyFindById = () =>
 	applyDecorators(
 		ApiOperation({ summary: 'Get company by id' }),
+		ApiParam({
+			name: 'id',
+			description: 'company id',
+		}),
 		ApiOkResponse({
 			type: CompanyEntity,
 		}),
@@ -102,9 +111,15 @@ export const ApiCompanyUpdate = () =>
 			description: 'company id',
 		}),
 		ApiOkResponse({ type: CompanyEntity }),
-		ApiNotFoundResponse({ description: 'Company not found' }),
-		ApiForbiddenResponse({ description: 'Access denied' }),
-		ApiConflictResponse({ description: 'Company already exists' })
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		}),
+		ApiConflictResponse({
+			description: 'Company already exists',
+		})
 	);
 
 export const ApiCompanyMemberUpdateRole = () =>
@@ -164,8 +179,12 @@ export const ApiCompanyRemove = () =>
 			description: 'company id',
 		}),
 		ApiNoContentResponse(),
-		ApiNotFoundResponse({ description: 'Company not found' }),
-		ApiForbiddenResponse({ description: 'Access denied' })
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
 	);
 
 export const ApiCompanyMemberRemove = () =>

@@ -1,17 +1,10 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 
 import { Public } from '@common/decorators/public.decorator';
-import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
-import { Paginated } from '@common/pagination/paginated';
+import { Paginated, PaginationOptionsDto } from '@common/pagination';
 
-import { User } from '@prisma/client';
-
-import {
-	ApiEventFindAll,
-	ApiEventFindById,
-} from './decorators/api-event.decorator';
-import { FilteringOptionsDto } from './dto/filtering-options.dto';
+import { ApiEventFindAll, ApiEventFindById } from './decorators/api-event.decorator';
+import { EventFilteringOptionsDto } from './dto/filtering-options.dto';
 import { EventEntity } from './entities/event.entity';
 import { EventService } from './event.service';
 
@@ -23,11 +16,10 @@ export class EventController {
 	@Public()
 	@Get()
 	findAll(
-		@Query() filteringOptions: FilteringOptionsDto,
-		@Query() paginationOptions: PaginationOptionsDto,
-		@CurrentUser() user: User
+		@Query() filteringOptions: EventFilteringOptionsDto,
+		@Query() paginationOptions: PaginationOptionsDto
 	): Promise<Paginated<EventEntity>> {
-		return this.eventService.findAll(filteringOptions, paginationOptions, user);
+		return this.eventService.findAll(filteringOptions, paginationOptions);
 	}
 
 	@ApiEventFindById()

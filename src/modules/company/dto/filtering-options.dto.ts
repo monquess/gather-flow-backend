@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class FilteringOptionsDto {
+export class CompanyFilteringOptionsDto {
 	@ApiProperty({
 		type: String,
 		example: 'Monquess',

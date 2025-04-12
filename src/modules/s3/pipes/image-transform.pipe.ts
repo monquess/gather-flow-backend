@@ -9,8 +9,7 @@ import * as sharp from 'sharp';
 
 @Injectable()
 export class ImageTransformPipe
-	implements
-		PipeTransform<Express.Multer.File, Promise<Express.Multer.File | undefined>>
+	implements PipeTransform<Express.Multer.File, Promise<Express.Multer.File | undefined>>
 {
 	async transform(
 		image: Express.Multer.File | undefined,

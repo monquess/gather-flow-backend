@@ -4,25 +4,19 @@ import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
 import { Event } from '@prisma/client';
 
-import { FilteringOptionsDto } from '@modules/event/dto/filtering-options.dto';
+import { EventFilteringOptionsDto } from '@modules/event/dto/filtering-options.dto';
+import { CompanyEventFilteringOptionsDto } from '@modules/company/dto';
 import { SearchService } from './abstract-search-service';
 import { IndexName } from './enum';
 import { eventMapping } from './mappings/event.mapping';
 
 @Injectable()
-export class EventSearchService
-	extends SearchService<Event>
-	implements OnModuleInit
-{
+export class EventSearchService extends SearchService<Event> implements OnModuleInit {
 	constructor(readonly es: ElasticsearchService) {
 		super(es, IndexName.EVENTS);
 	}
 
 	async onModuleInit() {
-		await this.initialize();
-	}
-
-	async initialize(): Promise<void> {
 		try {
 			const exists = await this.es.indices.exists({
 				index: this._index,
@@ -63,7 +57,7 @@ export class EventSearchService
 	}
 
 	async search(
-		options: FilteringOptionsDto,
+		options: EventFilteringOptionsDto | CompanyEventFilteringOptionsDto,
 		page: number,
 		limit: number
 	): Promise<Event[]> {
@@ -84,10 +78,10 @@ export class EventSearchService
 		});
 	}
 
-	private buildQuery(options: FilteringOptionsDto): QueryDslQueryContainer {
-		const entries = Object.entries(options).filter(
-			([_, value]) => value !== undefined
-		);
+	private buildQuery(
+		options: EventFilteringOptionsDto | CompanyEventFilteringOptionsDto
+	): QueryDslQueryContainer {
+		const entries = Object.entries(options).filter(([_, value]) => value !== undefined);
 		const must = entries.map<QueryDslQueryContainer>(([key, value]) => {
 			if (key === 'query') {
 				return {

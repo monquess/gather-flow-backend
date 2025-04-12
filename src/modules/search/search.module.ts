@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
 
-import { ElasticsearchConfigFactory } from '@modules/config/factories/elasticsearch-config.factory';
+import { ElasticsearchConfigFactory } from '@modules/config/factories';
 import { EventSearchService } from './event-search.service';
 
 @Module({

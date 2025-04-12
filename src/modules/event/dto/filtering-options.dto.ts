@@ -1,16 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { EventStatus, Format, Theme } from '@prisma/client';
+import { Format, Theme } from '@prisma/client';
 import { Type } from 'class-transformer';
-import {
-	IsDate,
-	IsEnum,
-	IsNotEmpty,
-	IsOptional,
-	IsPositive,
-	IsString,
-} from 'class-validator';
+import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class FilteringOptionsDto {
+export class EventFilteringOptionsDto {
 	@ApiProperty({
 		type: String,
 		example: 'Tech conference',
@@ -40,21 +33,6 @@ export class FilteringOptionsDto {
 	@IsOptional()
 	@IsEnum(Theme)
 	readonly theme?: Theme;
-
-	@ApiProperty({
-		type: String,
-		enum: EventStatus,
-		example: EventStatus.PUBLISHED,
-		required: false,
-	})
-	@IsOptional()
-	@IsEnum(EventStatus)
-	readonly status?: EventStatus;
-
-	@IsOptional()
-	@IsPositive()
-	@Type(() => Number)
-	readonly companyId?: number;
 
 	@ApiProperty({
 		type: String,
