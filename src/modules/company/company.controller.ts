@@ -1,5 +1,6 @@
 import {
 	Body,
+	ClassSerializerInterceptor,
 	Controller,
 	Delete,
 	FileTypeValidator,
@@ -47,7 +48,9 @@ import { ImageTransformPipe } from '@modules/s3/pipes/image-transform.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { EventEntity } from '@modules/event/entities/event.entity';
 import { UpdateEventDto } from '@modules/company/dto/update-event.dto';
+import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
 
+@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
 @Controller('companies')
 export class CompanyController {
 	constructor(private readonly companyService: CompanyService) {}
