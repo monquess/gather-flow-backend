@@ -68,6 +68,18 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 			},
 			from: (page - 1) * limit,
 			size: limit,
+			sort: [
+				{
+					_score: {
+						order: 'desc',
+					},
+				},
+				{
+					createdAt: {
+						order: 'desc',
+					},
+				},
+			],
 		});
 
 		return hits.hits.map((hit) => {
