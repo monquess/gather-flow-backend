@@ -15,6 +15,11 @@ export class EventService {
 		private readonly searchService: EventSearchService
 	) {}
 
+	async index(): Promise<void> {
+		const events = await this.prisma.event.findMany();
+		await this.searchService.indexBulk(events);
+	}
+
 	async findById(id: number): Promise<EventEntity> {
 		return this.prisma.event.findUniqueOrThrow({
 			where: {

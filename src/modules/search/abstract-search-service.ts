@@ -26,6 +26,13 @@ export abstract class SearchService<T extends Document> {
 		});
 	}
 
+	async indexBulk(documents: T[]): Promise<void> {
+		await this.es.bulk({
+			index: this._index,
+			body: documents.flatMap((doc) => [{ index: { _id: doc.id.toString() } }, doc]),
+		});
+	}
+
 	async update(document: T): Promise<void> {
 		const { id, ...body } = document;
 
