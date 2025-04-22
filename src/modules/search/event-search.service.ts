@@ -2,7 +2,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
-import { Event } from '@prisma/client';
+import { Event, EventStatus } from '@prisma/client';
 
 import { EventFilteringOptionsDto } from '@modules/event/dto/filtering-options.dto';
 import { CompanyEventFilteringOptionsDto } from '@modules/company/dto';
@@ -67,6 +67,46 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 				query: this.buildQuery(options),
 			},
 			from: (page - 1) * limit,
+			size: limit,
+		});
+
+		return hits.hits.map((hit) => {
+			return {
+				id: Number(hit._id),
+				...hit._source,
+			} as Event;
+		});
+	}
+
+	async similar(id: string, limit: number): Promise<Event[]> {
+		const { hits } = await this.es.search<Omit<Event, 'id'>>({
+			index: this._index,
+			body: {
+				query: {
+					bool: {
+						must: [
+							{
+								more_like_this: {
+									fields: ['title', 'description', 'format', 'theme', 'location'],
+									like: [
+										{
+											_index: this._index,
+											_id: id,
+										},
+									],
+								},
+							},
+						],
+						filter: [
+							{
+								term: {
+									status: EventStatus.PUBLISHED,
+								},
+							},
+						],
+					},
+				},
+			},
 			size: limit,
 		});
 

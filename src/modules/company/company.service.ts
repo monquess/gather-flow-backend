@@ -88,9 +88,10 @@ export class CompanyService {
 			page,
 			limit
 		);
+		const ids = events.map((event) => event.id);
 		const where: Prisma.EventWhereInput = {
 			id: {
-				in: events.map((event) => event.id),
+				in: ids,
 			},
 		};
 
@@ -107,7 +108,9 @@ export class CompanyService {
 		]);
 
 		return {
-			data: result,
+			data: ids
+				.map((id) => result.find((e) => e.id === id))
+				.filter((e) => e !== undefined),
 			meta: getPaginationMeta(count, page, limit),
 		};
 	}

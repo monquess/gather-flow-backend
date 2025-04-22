@@ -5,6 +5,7 @@ import {
 
 const textProperty: MappingProperty = {
 	type: 'text',
+	term_vector: 'yes',
 	analyzer: 'autocomplete',
 	search_analyzer: 'autocomplete',
 };
@@ -14,7 +15,6 @@ export const eventMapping: MappingTypeMapping = {
 		title: textProperty,
 		description: textProperty,
 		location: textProperty,
-		id: { type: 'keyword' },
 		companyId: { type: 'integer' },
 		status: { type: 'keyword' },
 		format: { type: 'keyword' },

@@ -15,6 +15,14 @@ export class EventService {
 		private readonly searchService: EventSearchService
 	) {}
 
+	async findById(id: number): Promise<EventEntity> {
+		return this.prisma.event.findUniqueOrThrow({
+			where: {
+				id,
+			},
+		});
+	}
+
 	async findAll(
 		options: EventFilteringOptionsDto,
 		{ page, limit }: PaginationOptionsDto
@@ -48,11 +56,21 @@ export class EventService {
 		};
 	}
 
-	async findById(id: number): Promise<EventEntity> {
-		return this.prisma.event.findUniqueOrThrow({
+	async findSimilar(id: number, limit: number): Promise<EventEntity[]> {
+		const event = await this.findById(id);
+		const similar = await this.searchService.similar(event.id.toString(), limit);
+
+		const ids = similar.map((event) => event.id);
+		const events = await this.prisma.event.findMany({
 			where: {
-				id,
+				id: {
+					in: ids,
+				},
 			},
 		});
+
+		return ids
+			.map((id) => events.find((e) => e.id === id))
+			.filter((e) => e !== undefined);
 	}
 }
