@@ -1,47 +1,58 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Format, Theme, VisitorsVisibility } from '@prisma/client';
+import { Format, Theme } from '@prisma/client';
 import { Type } from 'class-transformer';
-import {
-	IsDate,
-	IsEnum,
-	IsOptional,
-	IsPositive,
-	IsString,
-} from 'class-validator';
+import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class FilteringOptionsDto {
+export class EventFilteringOptionsDto {
 	@ApiProperty({
 		type: String,
-		example: 'Tech Conference',
+		example: 'Tech conference',
+		required: false,
 	})
 	@IsOptional()
 	@IsString()
-	title?: string;
+	@IsNotEmpty()
+	readonly query?: string;
 
+	@ApiProperty({
+		type: String,
+		enum: Format,
+		example: Format.CONFERENCE,
+		required: false,
+	})
 	@IsOptional()
 	@IsEnum(Format)
-	format?: Format;
+	readonly format?: Format;
 
+	@ApiProperty({
+		type: String,
+		enum: Theme,
+		example: Theme.BUSINESS,
+		required: false,
+	})
 	@IsOptional()
 	@IsEnum(Theme)
-	theme?: Theme;
+	readonly theme?: Theme;
 
-	@IsOptional()
-	@IsEnum(VisitorsVisibility)
-	visitorsVisibility?: VisitorsVisibility;
-
-	@IsOptional()
-	@IsPositive()
-	@Type(() => Number)
-	companyId?: number;
-
+	@ApiProperty({
+		type: String,
+		format: 'date-time',
+		example: '2024-03-17T16:00:00.000Z',
+		required: false,
+	})
 	@IsOptional()
 	@IsDate()
 	@Type(() => Date)
-	startDate?: Date;
+	readonly startDate?: Date;
 
+	@ApiProperty({
+		type: String,
+		format: 'date-time',
+		example: '2024-03-17T18:30:00.000Z',
+		required: false,
+	})
 	@IsOptional()
 	@IsDate()
 	@Type(() => Date)
-	endDate?: Date;
+	readonly endDate?: Date;
 }

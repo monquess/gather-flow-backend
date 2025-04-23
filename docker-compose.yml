@@ -1,14 +1,20 @@
+name: gatherflow
 services:
   api:
     image: gatherflow-api
     build:
-      target: production
+      context: .
+      target: development
     env_file:
       - .env
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
     ports:
       - '${PORT}:${PORT}'
@@ -21,12 +27,12 @@ services:
       - POSTGRES_DB=${DATABASE_NAME}
       - PGDATA=/var/lib/postgresql/data/pgdata
     ports:
-      - '${DATABASE_PORT}:5432'
+      - '${DATABASE_PORT:-5432}:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data/pgdata
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}']
-      interval: 30s
+      interval: 10s
       timeout: 10s
       retries: 5
     restart: unless-stopped
@@ -36,7 +42,7 @@ services:
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     ports:
-      - '${REDIS_PORT}:6379'
+      - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redisdata:/data
     deploy:
@@ -59,7 +65,7 @@ services:
       '
     healthcheck:
       test: ['CMD', 'redis-cli', '-a', '$REDIS_PASSWORD', 'ping']
-      interval: 30s
+      interval: 10s
       timeout: 10s
       retries: 5
     restart: unless-stopped
@@ -94,7 +100,33 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.4
+    ports:
+      - ${ELASTICSEARCH_PORT:-9200}:9200
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    environment:
+      - node.name=${ELASTICSEARCH_NODE_NAME}
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - bootstrap.memory_lock=true
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'curl -s  http://localhost:${ELASTICSEARCH_PORT}/_cluster/health']
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: 'unless-stopped'
+
 volumes:
   pgdata:
+  esdata:
   redisdata:
   miniodata:

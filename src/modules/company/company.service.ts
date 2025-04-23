@@ -5,15 +5,16 @@ import { CompanyRole, EventStatus, Prisma, User } from '@prisma/client';
 
 import { Job, Queue } from 'bullmq';
 
-import { getPaginationMeta } from '@common/pagination/paginated-metadata';
-import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
-import { Paginated } from '@common/pagination/paginated';
+import { PaginationOptionsDto, Paginated, getPaginationMeta } from '@common/pagination';
+import {
+	CreateCompanyDto,
+	UpdateCompanyDto,
+	CreateCompanyMemberDto,
+	UpdateCompanyMemberRoleDto,
+	CompanyFilteringOptionsDto,
+	CompanyEventFilteringOptionsDto,
+} from './dto';
 
-import { CreateCompanyDto } from './dto/create-company.dto';
-import { UpdateCompanyDto } from './dto/update-company.dto';
-import { CreateCompanyMemberDto } from './dto/create-company-member.dto';
-import { FilteringOptionsDto } from './dto/filtering-options.dto';
-import { UpdateCompanyMemberRoleDto } from './dto/update-company-member-role.dto';
 import { CompanyMemberEntity } from './entities/company-member.entity';
 import { CompanyEntity } from './entities/company.entity';
 import { PublishEventJobData } from './interfaces/publish-event-job-data.interface';
@@ -25,6 +26,7 @@ import { UpdateEventDto } from '@modules/company/dto/update-event.dto';
 import { EventService } from '@modules/event/event.service';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { AppConfig, appConfig } from '@modules/config/configs';
+import { EventSearchService } from '@modules/search/event-search.service';
 
 @Injectable()
 export class CompanyService {
@@ -34,11 +36,13 @@ export class CompanyService {
 		private readonly prisma: PrismaService,
 		private readonly s3Service: S3Service,
 		private readonly eventService: EventService,
-		@InjectQueue('publishEvent') private publishQueue: Queue
+		private readonly eventSearchService: EventSearchService,
+		@InjectQueue('publishEvent')
+		private readonly publishQueue: Queue
 	) {}
 
 	async findAll(
-		{ name }: FilteringOptionsDto,
+		{ name }: CompanyFilteringOptionsDto,
 		{ page, limit }: PaginationOptionsDto
 	): Promise<Paginated<CompanyEntity>> {
 		const where: Prisma.CompanyWhereInput = {
@@ -53,7 +57,9 @@ export class CompanyService {
 				where,
 				take: limit,
 				skip: limit * (page - 1),
-				orderBy: { createdAt: 'asc' },
+				orderBy: {
+					createdAt: 'asc',
+				},
 				include: {
 					users: true,
 				},
@@ -63,6 +69,39 @@ export class CompanyService {
 
 		return {
 			data: companies,
+			meta: getPaginationMeta(count, page, limit),
+		};
+	}
+
+	async findEvents(
+		companyId: number,
+		options: CompanyEventFilteringOptionsDto,
+		{ page, limit }: PaginationOptionsDto,
+		user: User
+	): Promise<Paginated<EventEntity>> {
+		const company = await this.findById(companyId);
+		const role = company.users?.find((u) => u.userId === user?.id)?.role;
+
+		const status = role === CompanyRole.ADMIN ? options.status : EventStatus.PUBLISHED;
+		const [events, count] = await this.eventSearchService.search(
+			{ ...options, status },
+			page,
+			limit
+		);
+
+		const ids = events.map((event) => event.id);
+		const result = await this.prisma.event.findMany({
+			where: {
+				id: {
+					in: ids,
+				},
+			},
+		});
+
+		return {
+			data: ids
+				.map((id) => result.find((e) => e.id === id))
+				.filter((e) => e !== undefined),
 			meta: getPaginationMeta(count, page, limit),
 		};
 	}
@@ -98,9 +137,7 @@ export class CompanyService {
 	): Promise<CompanyMemberEntity> {
 		const company = await this.findById(companyId);
 
-		const currentUserMembership = company.users?.find(
-			(u) => u.userId === user.id
-		);
+		const currentUserMembership = company.users?.find((u) => u.userId === user.id);
 
 		if (currentUserMembership?.role !== CompanyRole.ADMIN) {
 			throw new ForbiddenException('Access denied');
@@ -144,6 +181,7 @@ export class CompanyService {
 					status: dto.publishDate ? EventStatus.DRAFT : EventStatus.PUBLISHED,
 				},
 			});
+			await this.eventSearchService.index(newEvent);
 
 			if (dto.publishDate) {
 				await this.publishQueue.add(
@@ -163,11 +201,7 @@ export class CompanyService {
 		return event;
 	}
 
-	async update(
-		id: number,
-		dto: UpdateCompanyDto,
-		user: User
-	): Promise<CompanyEntity> {
+	async update(id: number, dto: UpdateCompanyDto, user: User): Promise<CompanyEntity> {
 		const company = await this.findById(id);
 
 		const membership = company.users?.find((u) => u.userId === user.id);
@@ -192,9 +226,7 @@ export class CompanyService {
 	): Promise<CompanyMemberEntity> {
 		const company = await this.findById(companyId);
 
-		const currentUserMembership = company.users?.find(
-			(u) => u.userId === user.id
-		);
+		const currentUserMembership = company.users?.find((u) => u.userId === user.id);
 
 		if (currentUserMembership?.role !== CompanyRole.ADMIN) {
 			throw new ForbiddenException('Access denied');
@@ -249,10 +281,10 @@ export class CompanyService {
 					poster: posterUrl,
 				},
 			});
+			await this.eventSearchService.update(newEvent);
 
-			const jobId = `event-${eventId}`;
 			const job = (await this.publishQueue.getJob(
-				jobId
+				`event-${eventId}`
 			)) as Job<PublishEventJobData>;
 
 			if (dto.status === EventStatus.PUBLISHED) {
@@ -302,14 +334,9 @@ export class CompanyService {
 	): Promise<void> {
 		const company = await this.findById(companyId);
 
-		const currentUserMembership = company.users?.find(
-			(u) => u.userId === user.id
-		);
+		const currentUserMembership = company.users?.find((u) => u.userId === user.id);
 
-		if (
-			currentUserMembership?.role !== CompanyRole.ADMIN &&
-			user.id !== targetUserId
-		) {
+		if (currentUserMembership?.role !== CompanyRole.ADMIN && user.id !== targetUserId) {
 			// can't delete members except yourself if you are not admin
 			throw new ForbiddenException('Access denied');
 		}
@@ -324,11 +351,7 @@ export class CompanyService {
 		});
 	}
 
-	async removeEvent(
-		companyId: number,
-		eventId: number,
-		user: User
-	): Promise<void> {
+	async removeEvent(companyId: number, eventId: number, user: User): Promise<void> {
 		const company = await this.findById(companyId);
 		const event = await this.eventService.findById(eventId);
 
@@ -343,11 +366,15 @@ export class CompanyService {
 		}
 
 		await this.prisma.$transaction(async (prisma) => {
-			await prisma.event.delete({ where: { id: eventId } });
+			const deletedEvent = await prisma.event.delete({
+				where: {
+					id: eventId,
+				},
+			});
+			await this.eventSearchService.remove(deletedEvent);
 
-			const jobId = `event-${eventId}`;
 			const job = (await this.publishQueue.getJob(
-				jobId
+				`event-${eventId}`
 			)) as Job<PublishEventJobData>;
 
 			if (job) {

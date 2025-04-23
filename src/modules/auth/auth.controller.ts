@@ -44,9 +44,8 @@ import {
 } from './guards';
 
 import { UserEntity } from '@modules/user/entities/user.entity';
-import { appConfig, AppConfig } from '@modules/config/configs/app.config';
-import { Public } from '@common/decorators/public.decorator';
-import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { appConfig, AppConfig } from '@modules/config/configs';
+import { Public, CurrentUser } from '@common/decorators';
 
 @ApiTags('Authorization')
 @UseInterceptors(ClassSerializerInterceptor)

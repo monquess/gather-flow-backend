@@ -1,15 +1,7 @@
-import {
-	Inject,
-	Injectable,
-	InternalServerErrorException,
-} from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 
-import {
-	DeleteObjectCommand,
-	PutObjectCommand,
-	S3Client,
-} from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { extname } from 'path';
 import { v4 as uuid } from 'uuid';
 

@@ -12,23 +12,26 @@ import {
 	Validate,
 } from 'class-validator';
 import { AfterDateValidator } from '../validators/after-date.validator';
+import { FutureDateValidator } from '../validators/future-date.validator';
 
 export class CreateEventDto {
 	@ApiProperty({
 		type: String,
 		example: 'Tech Conference',
 	})
-	@IsNotEmpty()
 	@IsString()
-	title: string;
+	@IsNotEmpty()
+	readonly title: string;
 
 	@ApiProperty({
-		example: 'About event...',
 		type: String,
+		example: 'About event...',
+		required: false,
 	})
 	@IsOptional()
 	@IsString()
-	description?: string;
+	@IsNotEmpty()
+	readonly description?: string;
 
 	@ApiProperty({
 		type: String,
@@ -36,7 +39,7 @@ export class CreateEventDto {
 		example: Format.CONFERENCE,
 	})
 	@IsEnum(Format)
-	format: Format;
+	readonly format: Format;
 
 	@ApiProperty({
 		type: String,
@@ -44,35 +47,37 @@ export class CreateEventDto {
 		example: Theme.BUSINESS,
 	})
 	@IsEnum(Theme)
-	theme: Theme;
+	readonly theme: Theme;
 
 	@ApiProperty({
-		example: 'United States Minnesota 46702 Jaydon Plains',
 		type: String,
+		example: 'United States Minnesota 46702 Jaydon Plains',
 	})
-	@IsNotEmpty()
 	@IsString()
-	location: string;
+	@IsNotEmpty()
+	readonly location: string;
 
 	@ApiProperty({
-		example: 19.25,
 		type: Prisma.Decimal,
+		example: 19.25,
 	})
 	@IsNotEmpty()
-	@Transform(({ value }) => new Prisma.Decimal(value).toNumber())
+	@Transform(({ value }: { value: Prisma.Decimal.Value }) =>
+		new Prisma.Decimal(value).toNumber()
+	)
 	@Type(() => Prisma.Decimal)
 	@Min(0)
-	ticketPrice: Prisma.Decimal;
+	readonly ticketPrice: Prisma.Decimal;
 
 	@ApiProperty({
-		example: 100,
 		type: Number,
+		example: 100,
 	})
 	@IsNotEmpty()
-	@Transform(({ value }) => parseInt(value))
 	@IsInt()
 	@Min(0)
-	ticketsQuantity: number;
+	@Transform(({ value }) => Number(value))
+	readonly ticketsQuantity: number;
 
 	@ApiProperty({
 		type: String,
@@ -80,36 +85,41 @@ export class CreateEventDto {
 		example: VisitorsVisibility.EVERYONE,
 	})
 	@IsEnum(VisitorsVisibility)
-	visitorsVisibility: VisitorsVisibility;
+	readonly visitorsVisibility: VisitorsVisibility;
 
 	@ApiProperty({
-		example: '2025-03-09T16:17:53.019Z',
 		type: String,
+		format: 'date-time',
+		example: '2025-03-07T16:30:00.000Z',
 	})
 	@IsISO8601({
 		strict: true,
 	})
-	startDate: Date;
+	readonly startDate: Date;
 
 	@ApiProperty({
-		example: '2025-03-09T16:17:53.019Z',
 		type: String,
+		format: 'date-time',
+		example: '2025-03-09T16:17:53.019Z',
+		required: false,
 	})
 	@IsOptional()
 	@IsISO8601({
 		strict: true,
 	})
 	@Validate(AfterDateValidator)
-	endDate?: Date;
+	readonly endDate?: Date;
 
 	@ApiProperty({
-		example: '2025-03-09T16:17:53.019Z',
 		type: String,
+		format: 'date-time',
+		example: '2025-03-07T20:30:00.000Z',
+		required: false,
 	})
 	@IsOptional()
 	@IsISO8601({
 		strict: true,
 	})
-	@Validate(AfterDateValidator)
-	publishDate?: Date;
+	@Validate(FutureDateValidator)
+	readonly publishDate?: Date;
 }

@@ -16,20 +16,28 @@ import {
 	UploadedFile,
 	UseInterceptors,
 } from '@nestjs/common';
-import { CompanyService } from './company.service';
-import { CompanyEntity } from './entities/company.entity';
-import { Public } from '@common/decorators/public.decorator';
-import { FilteringOptionsDto } from './dto/filtering-options.dto';
-import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
-import { Paginated } from '@common/pagination/paginated';
-import { CreateCompanyDto } from './dto/create-company.dto';
-import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { User } from '@prisma/client';
-import { UpdateCompanyDto } from './dto/update-company.dto';
+
+import {
+	CompanyFilteringOptionsDto,
+	CompanyEventFilteringOptionsDto,
+	CreateCompanyDto,
+	UpdateCompanyDto,
+	CreateCompanyMemberDto,
+	UpdateCompanyMemberRoleDto,
+} from './dto';
+import { CompanyEntity } from './entities/company.entity';
+import { CompanyMemberEntity } from './entities/company-member.entity';
+
+import { Public, CurrentUser } from '@common/decorators';
+import { Paginated, PaginationOptionsDto } from '@common/pagination';
+
 import {
 	ApiCompanyCreate,
 	ApiCompanyFindAll,
 	ApiCompanyFindById,
+	ApiCompanyFindEvents,
 	ApiCompanyMemberCreate,
 	ApiCompanyMemberRemove,
 	ApiCompanyMemberUpdateRole,
@@ -39,12 +47,10 @@ import {
 	ApiEventRemove,
 	ApiEventUpdate,
 } from './decorators/api-company.decorator';
-import { CreateCompanyMemberDto } from './dto/create-company-member.dto';
-import { CompanyMemberEntity } from './entities/company-member.entity';
-import { UpdateCompanyMemberRoleDto } from './dto/update-company-member-role.dto';
+import { CompanyService } from './company.service';
+
 import { CreateEventDto } from '@modules/company/dto/create-event.dto';
 import { ImageTransformPipe } from '@modules/s3/pipes/image-transform.pipe';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { EventEntity } from '@modules/event/entities/event.entity';
 import { UpdateEventDto } from '@modules/company/dto/update-event.dto';
 
@@ -56,10 +62,22 @@ export class CompanyController {
 	@Public()
 	@Get()
 	findAll(
-		@Query() filteringOptions: FilteringOptionsDto,
+		@Query() filteringOptions: CompanyFilteringOptionsDto,
 		@Query() paginationOptions: PaginationOptionsDto
 	): Promise<Paginated<CompanyEntity>> {
 		return this.companyService.findAll(filteringOptions, paginationOptions);
+	}
+
+	@ApiCompanyFindEvents()
+	@Public()
+	@Get(':id/events')
+	findEvents(
+		@Param('id', ParseIntPipe) id: number,
+		@Query() filteringOptions: CompanyEventFilteringOptionsDto,
+		@Query() paginationOptions: PaginationOptionsDto,
+		@CurrentUser() user: User
+	): Promise<Paginated<EventEntity>> {
+		return this.companyService.findEvents(id, filteringOptions, paginationOptions, user);
 	}
 
 	@ApiCompanyFindById()
@@ -116,12 +134,7 @@ export class CompanyController {
 		)
 		poster?: Express.Multer.File
 	): Promise<EventEntity> {
-		return this.companyService.createEvent(
-			companyId,
-			createEventDto,
-			user,
-			poster
-		);
+		return this.companyService.createEvent(companyId, createEventDto, user, poster);
 	}
 
 	@ApiCompanyUpdate()
@@ -200,11 +213,7 @@ export class CompanyController {
 		@Param('userId', ParseIntPipe) targetUserId: number,
 		@CurrentUser() user: User
 	): Promise<void> {
-		return this.companyService.removeCompanyMember(
-			companyId,
-			targetUserId,
-			user
-		);
+		return this.companyService.removeCompanyMember(companyId, targetUserId, user);
 	}
 
 	@ApiEventRemove()

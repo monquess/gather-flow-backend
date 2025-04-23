@@ -17,7 +17,7 @@ export class PaginatedMetadata {
 		example: 30,
 		type: Number,
 	})
-	itemCount: number;
+	count: number;
 
 	@ApiProperty({
 		example: 2,
@@ -48,7 +48,7 @@ export const getPaginationMeta = (
 	return {
 		page,
 		limit,
-		itemCount: count,
+		count,
 		pageCount,
 		prev: page > 1 ? page - 1 : null,
 		next: page < pageCount ? page + 1 : null,

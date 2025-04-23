@@ -8,30 +8,32 @@ datasource db {
 }
 
 model User {
-  id        Int             @id @default(autoincrement())
-  username  String          @unique @db.VarChar(255)
-  email     String          @unique @db.VarChar(255)
-  password  String?         @db.VarChar(60)
-  verified  Boolean         @default(false)
+  id        Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  password  String?  @db.VarChar(60)
+  verified  Boolean  @default(false)
   avatar    String
-  provider  Provider        @default(LOCAL)
-  companies CompanyMember[]
-
+  provider  Provider @default(LOCAL)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  companies     CompanyMember[]
+  subscriptions EventSubscription[]
 
   @@map("users")
 }
 
 model Company {
-  id          Int             @id @default(autoincrement())
-  name        String          @db.VarChar(255)
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
   description String?
-  email       String          @unique @db.VarChar(255)
-  location    String          @db.VarChar(255)
-  createdAt   DateTime        @default(now()) @map("created_at")
-  users       CompanyMember[]
-  events      Event[]
+  email       String   @unique @db.VarChar(255)
+  location    String   @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  users  CompanyMember[]
+  events Event[]
 
   @@map("companies")
 }
@@ -64,11 +66,23 @@ model Event {
   endDate            DateTime?          @map("end_date")
   publishDate        DateTime?          @map("publish_date")
   createdAt          DateTime           @default(now()) @map("created_at")
+  company            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId          Int                @map("company_id")
 
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  companyId Int     @map("company_id")
+  subscriptions EventSubscription[]
 
   @@map("events")
+}
+
+model EventSubscription {
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @map("user_id")
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   Int      @map("event_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, eventId])
+  @@map("event_subscriptions")
 }
 
 enum Provider {

@@ -11,7 +11,7 @@ import {
 	ApiHeader,
 } from '@nestjs/swagger';
 import { AuthResponseDto } from '../dto/auth-response.dto';
-import { ApiAuth } from '@common/decorators/swagger/api-auth.decorator';
+import { ApiAuth } from '@common/decorators';
 
 export const ApiAuthRegister = () =>
 	applyDecorators(

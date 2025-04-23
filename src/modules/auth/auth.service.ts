@@ -25,7 +25,7 @@ import { AppConfig, appConfig } from '@modules/config/configs/app.config';
 import { TOKEN_PREFIXES } from './constants/token-prefixes.constant';
 import { COOKIE_NAMES } from './constants/cookie-names.constant';
 
-import { CreateUserDto } from '@modules/user/dto/create-user.dto';
+import { CreateUserDto } from '@modules/user/dto';
 import { NodeEnv } from '@common/enum/node-env.enum';
 import { authConfig, AuthConfig } from '@modules/config/configs';
 
@@ -113,12 +113,9 @@ export class AuthService {
 	}
 
 	async verifyEmail(email: string, verifyToken: string): Promise<void> {
-		const token = await this.redis.get<string>(
-			TOKEN_PREFIXES.VERIFICATION,
-			email
-		);
+		const token = await this.redis.get<string>(TOKEN_PREFIXES.VERIFICATION, email);
 
-		if (token !== verifyToken) {
+		if (token?.toLowerCase() !== verifyToken.toLowerCase()) {
 			throw new BadRequestException('Invalid email or token');
 		}
 
@@ -138,12 +135,9 @@ export class AuthService {
 		resetToken: string,
 		password: string
 	): Promise<void> {
-		const token = await this.redis.get<string>(
-			TOKEN_PREFIXES.RESET_PASSWORD,
-			email
-		);
+		const token = await this.redis.get<string>(TOKEN_PREFIXES.RESET_PASSWORD, email);
 
-		if (token !== resetToken) {
+		if (token?.toLowerCase() !== resetToken.toLowerCase()) {
 			await this.checkResetPasswordRetries(email);
 			throw new BadRequestException('Invalid email or token');
 		}
@@ -190,12 +184,7 @@ export class AuthService {
 			token,
 		};
 
-		await this.redis.set(
-			TOKEN_PREFIXES.VERIFICATION,
-			user.email,
-			token,
-			15 * 60
-		);
+		await this.redis.set(TOKEN_PREFIXES.VERIFICATION, user.email, token, 15 * 60);
 
 		await this.mailService.sendMail({
 			to: user.email,
@@ -256,9 +245,7 @@ export class AuthService {
 
 		if (retries > 5) {
 			await this.redis.del(TOKEN_PREFIXES.RESET_PASSWORD, email);
-			throw new ForbiddenException(
-				'Too many failed attempts. Try again later.'
-			);
+			throw new ForbiddenException('Too many failed attempts. Try again later.');
 		}
 	}
 

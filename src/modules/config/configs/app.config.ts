@@ -1,22 +1,15 @@
 import { registerAs } from '@nestjs/config';
-import {
-	IsEnum,
-	IsString,
-	IsNumber,
-	Max,
-	Min,
-	IsNotEmpty,
-} from 'class-validator';
+import { IsEnum, IsString, Max, Min, IsNotEmpty, IsInt } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 import { NodeEnv } from '@common/enum/node-env.enum';
 import { validateConfig } from './validate-config';
 
-export class AppEnvironmentVariables {
+class AppEnvironmentVariables {
 	@IsEnum(NodeEnv)
 	readonly NODE_ENV: NodeEnv = NodeEnv.DEV;
 
-	@IsNumber()
+	@IsInt()
 	@Min(0)
 	@Max(65535)
 	@Transform(({ value }) => Number(value))

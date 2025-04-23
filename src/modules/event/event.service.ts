@@ -1,82 +1,76 @@
-import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
-import { PrismaService } from '@modules/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { EventStatus } from '@prisma/client';
 
-import { Paginated } from '@common/pagination/paginated';
-import { getPaginationMeta } from '@common/pagination/paginated-metadata';
+import { PaginationOptionsDto, Paginated, getPaginationMeta } from '@common/pagination';
+import { PrismaService } from '@modules/prisma/prisma.service';
+import { EventSearchService } from '@modules/search/event-search.service';
 
 import { EventEntity } from './entities/event.entity';
-import { FilteringOptionsDto } from './dto/filtering-options.dto';
+import { EventFilteringOptionsDto } from './dto/filtering-options.dto';
 
 @Injectable()
 export class EventService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly searchService: EventSearchService
+	) {}
 
-	async findAll(
-		{
-			title,
-			format,
-			theme,
-			visitorsVisibility,
-			companyId,
-			startDate,
-			endDate,
-		}: FilteringOptionsDto,
-		{ page, limit }: PaginationOptionsDto
-	): Promise<Paginated<EventEntity>> {
-		const where: Prisma.EventWhereInput = {
-			AND: [
-				{
-					title: {
-						contains: title,
-						mode: 'insensitive',
-					},
-				},
-				{
-					format,
-				},
-				{
-					theme,
-				},
-				{
-					visitorsVisibility,
-				},
-				{
-					companyId,
-				},
-				{
-					startDate: {
-						gte: startDate,
-					},
-				},
-				{
-					endDate: {
-						lte: endDate,
-					},
-				},
-			],
-		};
-
-		const [events, count] = await this.prisma.$transaction([
-			this.prisma.event.findMany({
-				where,
-				take: limit,
-				skip: limit * (page - 1),
-				orderBy: { createdAt: 'asc' },
-			}),
-			this.prisma.event.count({ where }),
-		]);
-
-		return {
-			data: events,
-			meta: getPaginationMeta(count, page, limit),
-		};
+	async index(): Promise<void> {
+		const events = await this.prisma.event.findMany();
+		console.log(events.length);
+		await this.searchService.indexBulk(events);
 	}
 
 	async findById(id: number): Promise<EventEntity> {
 		return this.prisma.event.findUniqueOrThrow({
-			where: { id },
+			where: {
+				id,
+			},
 		});
+	}
+
+	async findAll(
+		options: EventFilteringOptionsDto,
+		{ page, limit }: PaginationOptionsDto
+	): Promise<Paginated<EventEntity>> {
+		const [events, count] = await this.searchService.search(
+			{ ...options, status: EventStatus.PUBLISHED },
+			page,
+			limit
+		);
+
+		const ids = events.map((event) => event.id);
+		const result = await this.prisma.event.findMany({
+			where: {
+				id: {
+					in: ids,
+				},
+			},
+		});
+
+		return {
+			data: ids
+				.map((id) => result.find((e) => e.id === id))
+				.filter((e) => e !== undefined),
+			meta: getPaginationMeta(count, page, limit),
+		};
+	}
+
+	async findSimilar(id: number, limit: number): Promise<EventEntity[]> {
+		const event = await this.findById(id);
+		const similar = await this.searchService.similar(event.id.toString(), limit);
+
+		const ids = similar.map((event) => event.id);
+		const events = await this.prisma.event.findMany({
+			where: {
+				id: {
+					in: ids,
+				},
+			},
+		});
+
+		return ids
+			.map((id) => events.find((e) => e.id === id))
+			.filter((e) => e !== undefined);
 	}
 }

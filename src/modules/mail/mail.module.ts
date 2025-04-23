@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+
 import { ConfigurableModuleClass } from './mail.module-definition';
 import { MailService } from './mail.service';
 
