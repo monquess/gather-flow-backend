@@ -72,7 +72,7 @@ model Event {
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId Int     @map("company_id")
 
-  users Ticket[] // TODO: fix to tickets
+  tickets Ticket[]
 
   @@map("events")
 }

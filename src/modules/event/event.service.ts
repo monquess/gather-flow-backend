@@ -24,7 +24,6 @@ export class EventService {
 			title,
 			format,
 			theme,
-			visitorsVisibility,
 			companyId,
 			startDate,
 			endDate,
@@ -44,9 +43,6 @@ export class EventService {
 				},
 				{
 					theme,
-				},
-				{
-					visitorsVisibility,
 				},
 				{
 					companyId,
@@ -94,7 +90,7 @@ export class EventService {
 		const event = await this.findById(eventId);
 		const availableTickets = event.ticketsQuantity - event.ticketsSold;
 
-		if (dto.quantity >= availableTickets) {
+		if (dto.quantity > availableTickets) {
 			throw new BadRequestException(
 				`Only ${availableTickets} tickets remaining`
 			);
@@ -139,18 +135,16 @@ export class EventService {
 				}
 			);
 
-			const payment = await prisma.payment.create({
+			await prisma.payment.create({
 				data: {
 					userId: user.id,
 					transactionId: session.id,
+					tickets: {
+						create: tickets.map((ticket) => ({
+							ticketId: ticket.id,
+						})),
+					},
 				},
-			});
-
-			await prisma.paymentTicket.createMany({
-				data: tickets.map((ticket) => ({
-					paymentId: payment.id,
-					ticketId: ticket.id,
-				})),
 			});
 
 			return { checkoutUrl: session.url, sessionId: session.id };

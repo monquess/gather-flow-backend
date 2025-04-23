@@ -11,6 +11,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PaymentStatus, Prisma, User } from '@prisma/client';
 import Stripe from 'stripe';
+import { ConnectStripeResponseDto } from './dto/connect-stripe-response.dto';
 
 @Injectable()
 export class StripeService {
@@ -27,7 +28,10 @@ export class StripeService {
 		);
 	}
 
-	async getStripeConnectUrl(companyId: number, user: User) {
+	async getStripeConnectUrl(
+		companyId: number,
+		user: User
+	): Promise<ConnectStripeResponseDto> {
 		await this.companyService.checkIsCompanyAdmin(user.id, companyId);
 
 		const redirectUri = `${this.configService.get<string>('APP_URL')}/api/v1/payments/stripe-callback`;

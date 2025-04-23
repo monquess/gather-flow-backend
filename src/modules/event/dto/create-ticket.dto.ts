@@ -10,7 +10,7 @@ export class CreateTicketDto {
 	@IsNotEmpty()
 	@Transform(({ value }) => parseInt(value))
 	@IsInt()
-	@Min(0)
+	@Min(1)
 	quantity: number;
 
 	@ApiProperty({
