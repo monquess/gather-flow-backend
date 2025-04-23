@@ -15,7 +15,7 @@ export abstract class SearchService<T extends Document> {
 		query: Record<string, unknown>,
 		page: number,
 		limit: number
-	): Promise<T[]>;
+	): Promise<[T[], number]>;
 
 	async index(document: T): Promise<void> {
 		const { id, ...body } = document;

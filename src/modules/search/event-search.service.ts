@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
+import {
+	AnalysisAnalyzer,
+	QueryDslQueryContainer,
+} from '@elastic/elasticsearch/lib/api/types';
 import { Event, EventStatus } from '@prisma/client';
 
 import { EventFilteringOptionsDto } from '@modules/event/dto/filtering-options.dto';
@@ -23,24 +26,30 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 			});
 
 			if (!exists) {
+				const autocomplete: AnalysisAnalyzer = {
+					type: 'custom',
+					tokenizer: 'standard',
+					filter: ['lowercase', 'asciifolding', 'autocomplete_filter'],
+				};
+
 				await this.es.indices.create({
 					index: this._index,
 					body: {
 						settings: {
-							max_ngram_diff: 19,
+							max_ngram_diff: 17,
 							analysis: {
 								filter: {
 									autocomplete_filter: {
-										type: 'ngram',
-										min_gram: 1,
+										type: 'edge_ngram',
+										min_gram: 3,
 										max_gram: 20,
 									},
 								},
 								analyzer: {
-									autocomplete: {
-										type: 'custom',
-										tokenizer: 'standard',
-										filter: ['lowercase', 'autocomplete_filter'],
+									autocomplete,
+									description_autocomplete: {
+										...autocomplete,
+										char_filter: ['html_strip'],
 									},
 								},
 							},
@@ -60,7 +69,7 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 		options: EventFilteringOptionsDto | CompanyEventFilteringOptionsDto,
 		page: number,
 		limit: number
-	): Promise<Event[]> {
+	): Promise<[Event[], number]> {
 		const { hits } = await this.es.search<Omit<Event, 'id'>>({
 			index: this._index,
 			body: {
@@ -82,12 +91,19 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 			],
 		});
 
-		return hits.hits.map((hit) => {
+		const events = hits.hits.map((hit) => {
 			return {
 				id: Number(hit._id),
 				...hit._source,
 			} as Event;
 		});
+
+		let total = 0;
+		if (hits.total !== undefined) {
+			total = typeof hits.total === 'number' ? hits.total : hits.total.value;
+		}
+
+		return [events, total];
 	}
 
 	async similar(id: string, limit: number): Promise<Event[]> {
@@ -139,7 +155,7 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 				return {
 					multi_match: {
 						query: value,
-						fields: ['title^3', 'description^2', 'location'],
+						fields: ['title^4', 'description^3', 'location'],
 						type: 'best_fields',
 						operator: 'or',
 					},

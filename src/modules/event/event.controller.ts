@@ -20,6 +20,7 @@ export class EventController {
 	constructor(private readonly eventService: EventService) {}
 
 	@Environment(NodeEnv.DEV)
+	@Public()
 	@Post('index')
 	index(): Promise<void> {
 		return this.eventService.index();

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { EventStatus, Prisma } from '@prisma/client';
+import { EventStatus } from '@prisma/client';
 
 import { PaginationOptionsDto, Paginated, getPaginationMeta } from '@common/pagination';
 import { PrismaService } from '@modules/prisma/prisma.service';
@@ -17,6 +17,7 @@ export class EventService {
 
 	async index(): Promise<void> {
 		const events = await this.prisma.event.findMany();
+		console.log(events.length);
 		await this.searchService.indexBulk(events);
 	}
 
@@ -32,31 +33,25 @@ export class EventService {
 		options: EventFilteringOptionsDto,
 		{ page, limit }: PaginationOptionsDto
 	): Promise<Paginated<EventEntity>> {
-		const events = await this.searchService.search(
+		const [events, count] = await this.searchService.search(
 			{ ...options, status: EventStatus.PUBLISHED },
 			page,
 			limit
 		);
-		const where: Prisma.EventWhereInput = {
-			id: {
-				in: events.map((event) => event.id),
-			},
-		};
 
-		const [result, count] = await this.prisma.$transaction([
-			this.prisma.event.findMany({
-				where,
-				take: limit,
-				skip: limit * (page - 1),
-				orderBy: {
-					createdAt: 'asc',
+		const ids = events.map((event) => event.id);
+		const result = await this.prisma.event.findMany({
+			where: {
+				id: {
+					in: ids,
 				},
-			}),
-			this.prisma.event.count({ where }),
-		]);
+			},
+		});
 
 		return {
-			data: result,
+			data: ids
+				.map((id) => result.find((e) => e.id === id))
+				.filter((e) => e !== undefined),
 			meta: getPaginationMeta(count, page, limit),
 		};
 	}

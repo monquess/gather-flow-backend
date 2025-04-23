@@ -83,29 +83,20 @@ export class CompanyService {
 		const role = company.users?.find((u) => u.userId === user?.id)?.role;
 
 		const status = role === CompanyRole.ADMIN ? options.status : EventStatus.PUBLISHED;
-		const events = await this.eventSearchService.search(
+		const [events, count] = await this.eventSearchService.search(
 			{ ...options, status },
 			page,
 			limit
 		);
-		const ids = events.map((event) => event.id);
-		const where: Prisma.EventWhereInput = {
-			id: {
-				in: ids,
-			},
-		};
 
-		const [result, count] = await this.prisma.$transaction([
-			this.prisma.event.findMany({
-				where,
-				take: limit,
-				skip: limit * (page - 1),
-				orderBy: {
-					createdAt: 'asc',
+		const ids = events.map((event) => event.id);
+		const result = await this.prisma.event.findMany({
+			where: {
+				id: {
+					in: ids,
 				},
-			}),
-			this.prisma.event.count({ where }),
-		]);
+			},
+		});
 
 		return {
 			data: ids
