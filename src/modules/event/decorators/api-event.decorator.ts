@@ -17,7 +17,7 @@ export const ApiEventFindById = () =>
 			type: EventEntity,
 		}),
 		ApiNotFoundResponse({
-			description: 'Record not found',
+			description: 'Event not found',
 		})
 	);
 
@@ -28,6 +28,6 @@ export const ApiEventFindSimilar = () =>
 			type: [EventEntity],
 		}),
 		ApiNotFoundResponse({
-			description: 'Record not found',
+			description: 'Event not found',
 		})
 	);

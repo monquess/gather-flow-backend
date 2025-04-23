@@ -13,13 +13,13 @@ model User {
   email     String   @unique @db.VarChar(255)
   password  String?  @db.VarChar(60)
   verified  Boolean  @default(false)
-  avatar    String
+  avatar    String   @db.VarChar(255)
   provider  Provider @default(LOCAL)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  companies     CompanyMember[]
-  subscriptions EventSubscription[]
+  companies CompanyMember[]
+  likes     Like[]
 
   @@map("users")
 }
@@ -34,6 +34,7 @@ model Company {
 
   users  CompanyMember[]
   events Event[]
+  posts  Post[]
 
   @@map("companies")
 }
@@ -50,6 +51,32 @@ model CompanyMember {
   @@map("company_members")
 }
 
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  content   String
+  poster    String   @db.VarChar(255)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int      @map("company_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  likes Like[]
+
+  @@map("posts")
+}
+
+model Like {
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @map("user_id")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int      @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, postId])
+  @@map("likes")
+}
+
 model Event {
   id                 Int                @id @default(autoincrement())
   title              String             @db.VarChar(255)
@@ -59,7 +86,7 @@ model Event {
   location           String             @db.VarChar(255)
   ticketPrice        Decimal            @map("ticket_price") @db.Decimal(10, 2)
   ticketsQuantity    Int                @map("tickets_quantity")
-  poster             String
+  poster             String             @db.VarChar(255)
   visitorsVisibility VisitorsVisibility @default(EVERYONE) @map("visitors_visibillity")
   status             EventStatus        @default(DRAFT)
   startDate          DateTime           @map("start_date")
@@ -69,20 +96,7 @@ model Event {
   company            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId          Int                @map("company_id")
 
-  subscriptions EventSubscription[]
-
   @@map("events")
-}
-
-model EventSubscription {
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int      @map("user_id")
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId   Int      @map("event_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@id([userId, eventId])
-  @@map("event_subscriptions")
 }
 
 enum Provider {

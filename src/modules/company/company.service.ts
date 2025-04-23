@@ -27,6 +27,10 @@ import { EventService } from '@modules/event/event.service';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { AppConfig, appConfig } from '@modules/config/configs';
 import { EventSearchService } from '@modules/search/event-search.service';
+import { CreatePostDto, UpdatePostDto } from '@modules/post/dto';
+import { PostEntity } from '@modules/post/entities/post.entity';
+import { StoragePath } from '@modules/s3/enum/storage-path.enum';
+import { PostService } from '@modules/post/post.service';
 
 @Injectable()
 export class CompanyService {
@@ -35,11 +39,21 @@ export class CompanyService {
 		private readonly config: ConfigType<AppConfig>,
 		private readonly prisma: PrismaService,
 		private readonly s3Service: S3Service,
+		private readonly postService: PostService,
 		private readonly eventService: EventService,
 		private readonly eventSearchService: EventSearchService,
 		@InjectQueue('publishEvent')
 		private readonly publishQueue: Queue
 	) {}
+
+	async findById(id: number): Promise<CompanyEntity> {
+		return this.prisma.company.findUniqueOrThrow({
+			where: { id },
+			include: {
+				users: true,
+			},
+		});
+	}
 
 	async findAll(
 		{ name }: CompanyFilteringOptionsDto,
@@ -106,15 +120,6 @@ export class CompanyService {
 		};
 	}
 
-	async findById(id: number): Promise<CompanyEntity> {
-		return this.prisma.company.findUniqueOrThrow({
-			where: { id },
-			include: {
-				users: true,
-			},
-		});
-	}
-
 	async create(dto: CreateCompanyDto, user: User): Promise<CompanyEntity> {
 		return this.prisma.company.create({
 			data: {
@@ -135,14 +140,7 @@ export class CompanyService {
 		{ role }: CreateCompanyMemberDto,
 		user: User
 	): Promise<CompanyMemberEntity> {
-		const company = await this.findById(companyId);
-
-		const currentUserMembership = company.users?.find((u) => u.userId === user.id);
-
-		if (currentUserMembership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
-
+		await this.checkMembership(companyId, user);
 		return this.prisma.companyMember.create({
 			data: {
 				companyId,
@@ -156,20 +154,14 @@ export class CompanyService {
 		companyId: number,
 		dto: CreateEventDto,
 		user: User,
-		file?: Express.Multer.File
+		poster?: Express.Multer.File
 	): Promise<EventEntity> {
-		const company = await this.findById(companyId);
-
-		const membership = company.users?.find((u) => u.userId === user.id);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
+		await this.checkMembership(companyId, user);
 
 		let posterUrl = this.config.defaults.poster;
-		if (file) {
-			const posterData = await this.s3Service.uploadFile('posters', file);
-			posterUrl = posterData.url;
+		if (poster) {
+			const { url } = await this.s3Service.uploadFile(StoragePath.POSTERS, poster);
+			posterUrl = url;
 		}
 
 		const event = await this.prisma.$transaction(async (prisma) => {
@@ -202,19 +194,12 @@ export class CompanyService {
 	}
 
 	async update(id: number, dto: UpdateCompanyDto, user: User): Promise<CompanyEntity> {
-		const company = await this.findById(id);
-
-		const membership = company.users?.find((u) => u.userId === user.id);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
-
+		await this.checkMembership(id, user);
 		return this.prisma.company.update({
-			data: dto,
 			where: {
 				id,
 			},
+			data: dto,
 		});
 	}
 
@@ -224,14 +209,7 @@ export class CompanyService {
 		{ role }: UpdateCompanyMemberRoleDto,
 		user: User
 	): Promise<CompanyMemberEntity> {
-		const company = await this.findById(companyId);
-
-		const currentUserMembership = company.users?.find((u) => u.userId === user.id);
-
-		if (currentUserMembership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
-
+		await this.checkMembership(companyId, user);
 		return this.prisma.companyMember.update({
 			where: {
 				userId_companyId: {
@@ -250,25 +228,20 @@ export class CompanyService {
 		eventId: number,
 		dto: UpdateEventDto,
 		user: User,
-		file?: Express.Multer.File
+		poster?: Express.Multer.File
 	): Promise<EventEntity> {
-		const company = await this.findById(companyId);
 		const event = await this.eventService.findById(eventId);
+
+		await this.checkMembership(companyId, user);
+
 		let posterUrl = event.poster;
-
-		const membership = company.users?.find((u) => u.userId === user.id);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
-
-		if (file) {
+		if (poster) {
 			if (event.poster !== this.config.defaults.poster) {
 				await this.s3Service.deleteFile(event.poster);
 			}
 
-			const posterData = await this.s3Service.uploadFile('posters', file);
-			posterUrl = posterData.url;
+			const { url } = await this.s3Service.uploadFile(StoragePath.POSTERS, poster);
+			posterUrl = url;
 		}
 
 		const updatedEvent = await this.prisma.$transaction(async (prisma) => {
@@ -316,15 +289,12 @@ export class CompanyService {
 	}
 
 	async remove(id: number, user: User): Promise<void> {
-		const company = await this.findById(id);
-
-		const membership = company.users?.find((u) => u.userId === user.id);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
-
-		await this.prisma.company.delete({ where: { id } });
+		await this.checkMembership(id, user);
+		await this.prisma.company.delete({
+			where: {
+				id,
+			},
+		});
 	}
 
 	async removeCompanyMember(
@@ -333,7 +303,6 @@ export class CompanyService {
 		user: User
 	): Promise<void> {
 		const company = await this.findById(companyId);
-
 		const currentUserMembership = company.users?.find((u) => u.userId === user.id);
 
 		if (currentUserMembership?.role !== CompanyRole.ADMIN && user.id !== targetUserId) {
@@ -352,14 +321,9 @@ export class CompanyService {
 	}
 
 	async removeEvent(companyId: number, eventId: number, user: User): Promise<void> {
-		const company = await this.findById(companyId);
 		const event = await this.eventService.findById(eventId);
 
-		const membership = company.users?.find((u) => u.userId === user.id);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
+		await this.checkMembership(companyId, user);
 
 		if (event.poster !== this.config.defaults.poster) {
 			await this.s3Service.deleteFile(event.poster);
@@ -381,5 +345,78 @@ export class CompanyService {
 				await job.remove();
 			}
 		});
+	}
+
+	async createPost(
+		companyId: number,
+		dto: CreatePostDto,
+		user: User,
+		poster?: Express.Multer.File
+	): Promise<PostEntity> {
+		await this.checkMembership(companyId, user);
+
+		let posterUrl = this.config.defaults.poster;
+		if (poster) {
+			const { url } = await this.s3Service.uploadFile(StoragePath.POSTERS, poster);
+			posterUrl = url;
+		}
+
+		return this.prisma.post.create({
+			data: {
+				...dto,
+				companyId,
+				poster: posterUrl,
+			},
+		});
+	}
+
+	async updatePost(
+		companyId: number,
+		postId: number,
+		dto: UpdatePostDto,
+		user: User,
+		poster?: Express.Multer.File
+	): Promise<PostEntity> {
+		const post = await this.postService.findById(postId);
+
+		await this.checkMembership(companyId, user);
+
+		let posterUrl = post.poster;
+		if (poster) {
+			if (post.poster !== this.config.defaults.poster) {
+				await this.s3Service.deleteFile(post.poster);
+			}
+
+			const { url } = await this.s3Service.uploadFile(StoragePath.POSTERS, poster);
+			posterUrl = url;
+		}
+
+		return this.prisma.post.update({
+			where: {
+				id: postId,
+			},
+			data: {
+				...dto,
+				poster: posterUrl,
+			},
+		});
+	}
+
+	async removePost(companyId: number, postId: number, user: User): Promise<void> {
+		await this.checkMembership(companyId, user);
+		await this.prisma.post.delete({
+			where: {
+				id: postId,
+			},
+		});
+	}
+
+	private async checkMembership(companyId: number, user: User): Promise<void> {
+		const company = await this.findById(companyId);
+		const membership = company.users?.find((u) => u.userId === user.id);
+
+		if (!membership) {
+			throw new ForbiddenException('Access denied');
+		}
 	}
 }
