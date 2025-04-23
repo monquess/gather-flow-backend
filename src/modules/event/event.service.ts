@@ -104,19 +104,17 @@ export class EventService {
 
 		const result = await this.prisma.$transaction(async (prisma) => {
 			const tickets = await Promise.all(
-				Array(dto.quantity)
-					.fill(null)
-					.map(() =>
-						prisma.ticket.create({
-							data: {
-								userId: user.id,
-								eventId,
-								ticketCode: this.ticketService.generateTicketCode(),
-								finalPrice: event.ticketPrice,
-								purchaseDate: new Date(),
-							},
-						})
-					)
+				Array(dto.quantity).map(() =>
+					prisma.ticket.create({
+						data: {
+							userId: user.id,
+							eventId,
+							ticketCode: this.ticketService.generateTicketCode(),
+							finalPrice: event.ticketPrice,
+							purchaseDate: new Date(),
+						},
+					})
+				)
 			);
 
 			await prisma.event.update({

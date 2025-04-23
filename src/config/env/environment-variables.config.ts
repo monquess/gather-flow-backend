@@ -146,6 +146,9 @@ export class EnvironmentVariables {
 
 	@IsString()
 	readonly STRIPE_WEBHOOK_KEY: string;
+
+	@IsString()
+	readonly STRIPE_CLIENT_ID: string;
 }
 
 export function validate(config: Record<string, unknown>) {

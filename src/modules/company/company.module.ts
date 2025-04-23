@@ -18,5 +18,6 @@ import { PublishEventProcessor } from './processors/publish-event.processor';
 	],
 	controllers: [CompanyController],
 	providers: [CompanyService, PublishEventProcessor],
+	exports: [CompanyService],
 })
 export class CompanyModule {}

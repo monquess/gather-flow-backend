@@ -26,14 +26,15 @@ model User {
 }
 
 model Company {
-  id          Int             @id @default(autoincrement())
-  name        String          @db.VarChar(255)
-  description String?
-  email       String          @unique @db.VarChar(255)
-  location    String          @db.VarChar(255)
-  createdAt   DateTime        @default(now()) @map("created_at")
-  users       CompanyMember[]
-  events      Event[]
+  id              Int             @id @default(autoincrement())
+  name            String          @db.VarChar(255)
+  description     String?
+  email           String          @unique @db.VarChar(255)
+  location        String          @db.VarChar(255)
+  stripeAccountId String?         @map("stripe_account_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  users           CompanyMember[]
+  events          Event[]
 
   @@map("companies")
 }
@@ -71,7 +72,7 @@ model Event {
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId Int     @map("company_id")
 
-  users Ticket[]
+  users Ticket[] // TODO: fix to tickets
 
   @@map("events")
 }

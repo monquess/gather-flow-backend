@@ -1,12 +1,15 @@
 import { EnvironmentVariables } from '@config/env/environment-variables.config';
+import { CompanyService } from '@modules/company/company.service';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import {
 	BadRequestException,
+	forwardRef,
+	Inject,
 	Injectable,
 	RawBodyRequest,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PaymentStatus, Prisma } from '@prisma/client';
+import { PaymentStatus, Prisma, User } from '@prisma/client';
 import Stripe from 'stripe';
 
 @Injectable()
@@ -15,11 +18,47 @@ export class StripeService {
 
 	constructor(
 		private readonly prisma: PrismaService,
-		private readonly configService: ConfigService<EnvironmentVariables, true>
+		private readonly configService: ConfigService<EnvironmentVariables, true>,
+		@Inject(forwardRef(() => CompanyService))
+		private readonly companyService: CompanyService
 	) {
 		this.stripe = new Stripe(
 			this.configService.get<string>('STRIPE_SECRET_KEY')
 		);
+	}
+
+	async getStripeConnectUrl(companyId: number, user: User) {
+		await this.companyService.checkIsCompanyAdmin(user.id, companyId);
+
+		const redirectUri = `${this.configService.get<string>('APP_URL')}/api/v1/payments/stripe-callback`;
+		const stripeClientId = this.configService.get<string>('STRIPE_CLIENT_ID');
+		const stripeConnectUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${stripeClientId}&scope=read_write&redirect_uri=${redirectUri}&state=${companyId}`;
+
+		return { url: stripeConnectUrl };
+	}
+
+	async handleStripeOAuthCallback(
+		code: string,
+		companyId: number
+	): Promise<void> {
+		try {
+			const response = await this.stripe.oauth.token({
+				grant_type: 'authorization_code',
+				code,
+			});
+			const stripeAccountId = response.stripe_user_id;
+
+			await this.prisma.company.update({
+				where: {
+					id: companyId,
+				},
+				data: {
+					stripeAccountId,
+				},
+			});
+		} catch {
+			throw new BadRequestException('Failed to connect Stripe account');
+		}
 	}
 
 	async createCheckoutSession(

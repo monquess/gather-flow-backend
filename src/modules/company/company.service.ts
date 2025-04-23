@@ -91,15 +91,7 @@ export class CompanyService {
 		{ role }: CreateCompanyMemberDto,
 		user: User
 	): Promise<CompanyMemberEntity> {
-		const company = await this.findById(companyId);
-
-		const currentUserMembership = company.users?.find(
-			(u) => u.userId === user.id
-		);
-
-		if (currentUserMembership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
+		await this.checkIsCompanyAdmin(user.id, companyId);
 
 		return this.prisma.companyMember.create({
 			data: {
@@ -116,13 +108,7 @@ export class CompanyService {
 		user: User,
 		file?: Express.Multer.File
 	): Promise<EventEntity> {
-		const company = await this.findById(companyId);
-
-		const membership = company.users?.find((u) => u.userId === user.id);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
+		await this.checkIsCompanyAdmin(user.id, companyId);
 
 		let posterUrl = this.configService.get<string>('DEFAULT_POSTER_PATH');
 		if (file) {
@@ -163,13 +149,7 @@ export class CompanyService {
 		dto: UpdateCompanyDto,
 		user: User
 	): Promise<CompanyEntity> {
-		const company = await this.findById(id);
-
-		const membership = company.users?.find((u) => u.userId === user.id);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
+		await this.checkIsCompanyAdmin(user.id, id);
 
 		return this.prisma.company.update({
 			data: dto,
@@ -185,15 +165,7 @@ export class CompanyService {
 		{ role }: UpdateCompanyMemberRoleDto,
 		user: User
 	): Promise<CompanyMemberEntity> {
-		const company = await this.findById(companyId);
-
-		const currentUserMembership = company.users?.find(
-			(u) => u.userId === user.id
-		);
-
-		if (currentUserMembership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
+		await this.checkIsCompanyAdmin(user.id, companyId);
 
 		return this.prisma.companyMember.update({
 			where: {
@@ -215,15 +187,9 @@ export class CompanyService {
 		user: User,
 		file?: Express.Multer.File
 	): Promise<EventEntity> {
-		const company = await this.findById(companyId);
+		await this.checkIsCompanyAdmin(user.id, companyId);
 		const event = await this.eventService.findById(eventId);
 		let posterUrl = event.poster;
-
-		const membership = company.users?.find((u) => u.userId === user.id);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
 
 		if (file) {
 			if (
@@ -281,13 +247,7 @@ export class CompanyService {
 	}
 
 	async remove(id: number, user: User): Promise<void> {
-		const company = await this.findById(id);
-
-		const membership = company.users?.find((u) => u.userId === user.id);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
+		await this.checkIsCompanyAdmin(user.id, id);
 
 		await this.prisma.company.delete({ where: { id } });
 	}
@@ -326,14 +286,8 @@ export class CompanyService {
 		eventId: number,
 		user: User
 	): Promise<void> {
-		const company = await this.findById(companyId);
+		await this.checkIsCompanyAdmin(user.id, companyId);
 		const event = await this.eventService.findById(eventId);
-
-		const membership = company.users?.find((u) => u.userId === user.id);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
 
 		if (
 			event.poster !== this.configService.get<string>('DEFAULT_POSTER_PATH')
@@ -353,5 +307,15 @@ export class CompanyService {
 				await job.remove();
 			}
 		});
+	}
+
+	async checkIsCompanyAdmin(userId: number, companyId: number): Promise<void> {
+		const company = await this.findById(companyId);
+
+		const membership = company.users?.find((u) => u.userId === userId);
+
+		if (membership?.role !== CompanyRole.ADMIN) {
+			throw new ForbiddenException('Access denied');
+		}
 	}
 }
