@@ -31,6 +31,7 @@ import { CompanyMemberEntity } from './entities/company-member.entity';
 
 import { Public, CurrentUser, UploadedImage } from '@common/decorators';
 import { Paginated, PaginationOptionsDto } from '@common/pagination';
+import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 
 import {
 	ApiCompanyCreate,
@@ -56,7 +57,6 @@ import { EventEntity } from '@modules/event/entities/event.entity';
 import { PostEntity } from '@modules/post/entities/post.entity';
 import { CreatePostDto, UpdatePostDto, PostSortingOptionsDto } from '@modules/post/dto';
 import { EventSortingOptionsDto } from '@modules/event/dto';
-import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
 
 @UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
 @Controller('companies')

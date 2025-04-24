@@ -21,7 +21,6 @@ model User {
 
   companies CompanyMember[]
   comments  Comment[]
-  companies CompanyMember[]
   likes     Like[]
 
   @@map("users")

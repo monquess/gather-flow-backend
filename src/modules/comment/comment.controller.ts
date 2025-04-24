@@ -15,7 +15,7 @@ import {
 import { User } from '@prisma/client';
 
 import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
+import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 
 import { UpdateCommentDto } from './dto';
 import { CommentEntity } from './entities/comment.entity';
