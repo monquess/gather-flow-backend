@@ -3,6 +3,7 @@ import { applyDecorators } from '@nestjs/common';
 import {
 	ApiBadRequestResponse,
 	ApiCreatedResponse,
+	ApiForbiddenResponse,
 	ApiNotFoundResponse,
 	ApiOkResponse,
 	ApiOperation,
@@ -13,6 +14,7 @@ import { EventEntity } from '../entities/event.entity';
 import { Format, Theme, VisitorsVisibility } from '@prisma/client';
 import { ApiAuth } from '@common/decorators/swagger/api-auth.decorator';
 import { CreateEventTicketResponseDto } from '../dto/create-event-ticket-response.dto';
+import { PromocodeEntity } from '../entities/promocode.entity';
 
 export const ApiEventFindAll = () =>
 	applyDecorators(
@@ -70,6 +72,25 @@ export const ApiEventFindById = () =>
 		})
 	);
 
+export const ApiEventFindPromocodes = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Get event promocodes' }),
+		ApiParam({
+			name: 'id',
+			description: 'event id',
+		}),
+		ApiOkResponse({
+			type: [PromocodeEntity],
+		}),
+		ApiNotFoundResponse({
+			description: 'Record not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
+	);
+
 export const ApiEventCreateTicket = () =>
 	applyDecorators(
 		ApiAuth(),
@@ -84,5 +105,43 @@ export const ApiEventCreateTicket = () =>
 		}),
 		ApiNotFoundResponse({
 			description: 'Event not found',
+		})
+	);
+
+export const ApiEventCreatePromocode = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Create event promocode' }),
+		ApiParam({
+			name: 'id',
+			description: 'event id',
+		}),
+		ApiCreatedResponse({ type: PromocodeEntity }),
+		ApiNotFoundResponse({
+			description: 'Record not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
+	);
+
+export const ApiEventUpdatePromocode = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Update event promocode' }),
+		ApiParam({
+			name: 'eventId',
+			description: 'event id',
+		}),
+		ApiParam({
+			name: 'promocodeId',
+			description: 'promocode id',
+		}),
+		ApiOkResponse({ type: PromocodeEntity }),
+		ApiNotFoundResponse({
+			description: 'Record not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
 		})
 	);

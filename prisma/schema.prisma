@@ -72,22 +72,24 @@ model Event {
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId Int     @map("company_id")
 
-  tickets Ticket[]
+  tickets    Ticket[]
+  promocodes Promocode[]
 
   @@map("events")
 }
 
 model Ticket {
-  id            Int      @id @default(autoincrement())
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        Int      @map("user_id")
-  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId       Int      @map("event_id")
-  purchaseDate  DateTime @map("purchase_date")
-  ticketCode    String   @map("ticket_code") @db.VarChar(255)
-  promocodeUsed String?  @map("promocode_used") @db.VarChar(255)
-  finalPrice    Decimal  @map("final_price") @db.Decimal(10, 2)
-  createdAt     DateTime @default(now()) @map("created_at")
+  id           Int        @id @default(autoincrement())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int        @map("user_id")
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId      Int        @map("event_id")
+  purchaseDate DateTime   @map("purchase_date")
+  ticketCode   String     @map("ticket_code") @db.VarChar(255)
+  promocode    Promocode? @relation(fields: [promocodeId], references: [id], onDelete: SetNull)
+  promocodeId  Int?       @map("promocode_id")
+  finalPrice   Decimal    @map("final_price") @db.Decimal(10, 2)
+  createdAt    DateTime   @default(now()) @map("created_at")
 
   payments PaymentTicket[]
 
@@ -115,6 +117,21 @@ model PaymentTicket {
 
   @@id([paymentId, ticketId])
   @@map("payment_tickets")
+}
+
+model Promocode {
+  id             Int      @id @default(autoincrement())
+  code           String   @unique @db.VarChar(255)
+  discount       Int
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId        Int      @map("event_id")
+  isActive       Boolean  @default(true) @map("is_active")
+  expirationDate DateTime @map("expiration_date")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  tickets Ticket[]
+
+  @@map("promocodes")
 }
 
 enum Provider {

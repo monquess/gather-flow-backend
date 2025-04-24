@@ -83,7 +83,7 @@ export class StripeService {
 		}
 
 		const paymentIntent = await this.stripe.paymentIntents.create({
-			amount: itemPrice.mul(100).round().toNumber(),
+			amount: itemPrice.mul(itemQuantity).mul(100).round().toNumber(),
 			currency: 'usd',
 			payment_method_types: ['card'],
 			transfer_data: {
