@@ -3,18 +3,14 @@ import {
 	ClassSerializerInterceptor,
 	Controller,
 	Delete,
-	FileTypeValidator,
 	Get,
 	HttpCode,
 	HttpStatus,
-	MaxFileSizeValidator,
 	Param,
-	ParseFilePipe,
 	ParseIntPipe,
 	Patch,
 	Post,
 	Query,
-	UploadedFile,
 	UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -22,6 +18,8 @@ import { User } from '@prisma/client';
 
 import {
 	CompanyFilteringOptionsDto,
+	CreateEventDto,
+	UpdateEventDto,
 	CompanyEventFilteringOptionsDto,
 	CreateCompanyDto,
 	UpdateCompanyDto,
@@ -31,7 +29,7 @@ import {
 import { CompanyEntity } from './entities/company.entity';
 import { CompanyMemberEntity } from './entities/company-member.entity';
 
-import { Public, CurrentUser } from '@common/decorators';
+import { Public, CurrentUser, UploadedImage } from '@common/decorators';
 import { Paginated, PaginationOptionsDto } from '@common/pagination';
 
 import {
@@ -47,13 +45,17 @@ import {
 	ApiEventCreate,
 	ApiEventRemove,
 	ApiEventUpdate,
+	ApiCompanyFindPosts,
+	ApiCompanyPostCreate,
+	ApiCompanyPostRemove,
+	ApiCompanyPostUpdate,
 } from './decorators/api-company.decorator';
 import { CompanyService } from './company.service';
 
-import { CreateEventDto } from '@modules/company/dto/create-event.dto';
-import { ImageTransformPipe } from '@modules/s3/pipes/image-transform.pipe';
 import { EventEntity } from '@modules/event/entities/event.entity';
-import { UpdateEventDto } from '@modules/company/dto/update-event.dto';
+import { PostEntity } from '@modules/post/entities/post.entity';
+import { CreatePostDto, UpdatePostDto, PostSortingOptionsDto } from '@modules/post/dto';
+import { EventSortingOptionsDto } from '@modules/event/dto';
 import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
 
 @UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
@@ -77,10 +79,17 @@ export class CompanyController {
 	findEvents(
 		@Param('id', ParseIntPipe) id: number,
 		@Query() filteringOptions: CompanyEventFilteringOptionsDto,
+		@Query() sortingOptions: EventSortingOptionsDto,
 		@Query() paginationOptions: PaginationOptionsDto,
 		@CurrentUser() user: User
 	): Promise<Paginated<EventEntity>> {
-		return this.companyService.findEvents(id, filteringOptions, paginationOptions, user);
+		return this.companyService.findEvents(
+			id,
+			filteringOptions,
+			sortingOptions,
+			paginationOptions,
+			user
+		);
 	}
 
 	@ApiCompanyFindById()
@@ -122,20 +131,7 @@ export class CompanyController {
 		@Param('companyId', ParseIntPipe) companyId: number,
 		@Body() createEventDto: CreateEventDto,
 		@CurrentUser() user: User,
-		@UploadedFile(
-			new ParseFilePipe({
-				validators: [
-					new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp|tiff)' }),
-					new MaxFileSizeValidator({
-						maxSize: 10e6,
-						message: 'File is too large. Max file size is 10MB',
-					}),
-				],
-				fileIsRequired: false,
-			}),
-			new ImageTransformPipe()
-		)
-		poster?: Express.Multer.File
+		@UploadedImage() poster?: Express.Multer.File
 	): Promise<EventEntity> {
 		return this.companyService.createEvent(companyId, createEventDto, user, poster);
 	}
@@ -174,20 +170,7 @@ export class CompanyController {
 		@Param('eventId', ParseIntPipe) eventId: number,
 		@Body() updateEventDto: UpdateEventDto,
 		@CurrentUser() user: User,
-		@UploadedFile(
-			new ParseFilePipe({
-				validators: [
-					new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp|tiff)' }),
-					new MaxFileSizeValidator({
-						maxSize: 10e6,
-						message: 'File is too large. Max file size is 10MB',
-					}),
-				],
-				fileIsRequired: false,
-			}),
-			new ImageTransformPipe()
-		)
-		poster?: Express.Multer.File
+		@UploadedImage() poster?: Express.Multer.File
 	): Promise<EventEntity> {
 		return this.companyService.updateEvent(
 			companyId,
@@ -228,5 +211,58 @@ export class CompanyController {
 		@CurrentUser() user: User
 	): Promise<void> {
 		return this.companyService.removeEvent(companyId, eventId, user);
+	}
+
+	@ApiCompanyFindPosts()
+	@Public()
+	@Get(':companyId/posts')
+	findPosts(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Query() sortingOptions: PostSortingOptionsDto,
+		@Query() paginationOptions: PaginationOptionsDto,
+		@CurrentUser() user: User
+	) {
+		return this.companyService.findPosts(
+			companyId,
+			sortingOptions,
+			paginationOptions,
+			user
+		);
+	}
+
+	@ApiCompanyPostCreate()
+	@UseInterceptors(FileInterceptor('poster'))
+	@Post(':companyId/posts')
+	createPost(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Body() dto: CreatePostDto,
+		@CurrentUser() user: User,
+		@UploadedImage() poster?: Express.Multer.File
+	): Promise<PostEntity> {
+		return this.companyService.createPost(companyId, dto, user, poster);
+	}
+
+	@ApiCompanyPostUpdate()
+	@UseInterceptors(FileInterceptor('poster'))
+	@Patch(':companyId/posts/:postId')
+	updatePost(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Param('postId', ParseIntPipe) postId: number,
+		@Body() dto: UpdatePostDto,
+		@CurrentUser() user: User,
+		@UploadedImage() poster?: Express.Multer.File
+	) {
+		return this.companyService.updatePost(companyId, postId, dto, user, poster);
+	}
+
+	@ApiCompanyPostRemove()
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@Delete(':companyId/posts/:postId')
+	removePost(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Param('postId', ParseIntPipe) postId: number,
+		@CurrentUser() user: User
+	) {
+		return this.companyService.removePost(companyId, postId, user);
 	}
 }

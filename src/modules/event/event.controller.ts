@@ -15,6 +15,8 @@ import { User } from '@prisma/client';
 import { Public } from '@common/decorators/public.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Paginated, PaginationOptionsDto } from '@common/pagination';
+import { Environment } from '@common/decorators/environment.decorator';
+import { NodeEnv } from '@common/enum/node-env.enum';
 import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
 import { CommentEntity } from '@modules/comment/entities/comment.entity';
 import { CreateCommentDto } from '@modules/comment/dto';
@@ -26,12 +28,13 @@ import {
 	ApiEventFindComments,
 	ApiEventFindSimilar,
 } from './decorators/api-event.decorator';
-import { EventFilteringOptionsDto } from './dto';
+import {
+	EventFilteringOptionsDto,
+	EventSortingOptionsDto,
+	SimilarEventsQueryDto,
+} from './dto';
 import { EventEntity } from './entities/event.entity';
 import { EventService } from './event.service';
-import { SimilarEventsQueryDto } from './dto/similar-events-query.dto';
-import { Environment } from '@common/decorators/environment.decorator';
-import { NodeEnv } from '@common/enum/node-env.enum';
 
 @UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
 @Controller('events')
@@ -57,9 +60,10 @@ export class EventController {
 	@Get()
 	findAll(
 		@Query() filteringOptions: EventFilteringOptionsDto,
+		@Query() sortingOptions: EventSortingOptionsDto,
 		@Query() paginationOptions: PaginationOptionsDto
 	): Promise<Paginated<EventEntity>> {
-		return this.eventService.findAll(filteringOptions, paginationOptions);
+		return this.eventService.findAll(filteringOptions, sortingOptions, paginationOptions);
 	}
 
 	@ApiEventFindSimilar()

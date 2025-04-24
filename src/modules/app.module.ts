@@ -20,6 +20,7 @@ import {
 	BullConfigFactory,
 } from './config/factories';
 import { SearchModule } from './search/search.module';
+import { PostModule } from './post/post.module';
 
 @Module({
 	imports: [
@@ -53,6 +54,7 @@ import { SearchModule } from './search/search.module';
 		EventModule,
 		SearchModule,
 		CommentModule,
+		PostModule,
 	],
 	providers: [
 		{

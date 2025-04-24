@@ -1,12 +1,5 @@
 import { registerAs } from '@nestjs/config';
-import {
-	IsString,
-	Min,
-	Max,
-	IsNotEmpty,
-	IsPositive,
-	IsInt,
-} from 'class-validator';
+import { IsString, Min, Max, IsNotEmpty, IsPositive, IsInt } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 import { validateConfig } from './validate-config';

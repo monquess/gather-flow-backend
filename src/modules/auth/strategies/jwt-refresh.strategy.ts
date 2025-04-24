@@ -15,10 +15,7 @@ import { TOKEN_PREFIXES } from '../constants/token-prefixes.constant';
 import { COOKIE_NAMES } from '../constants/cookie-names.constant';
 
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(
-	Strategy,
-	'jwt-refresh'
-) {
+export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
 	constructor(
 		@Inject(authConfig.KEY)
 		private readonly config: ConfigType<AuthConfig>,
@@ -38,10 +35,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
 	}
 
 	async validate(req: Request, payload: JwtPayload) {
-		const token = await this.redis.get<string>(
-			TOKEN_PREFIXES.REFRESH,
-			payload.sub
-		);
+		const token = await this.redis.get<string>(TOKEN_PREFIXES.REFRESH, payload.sub);
 		const user = await this.prisma.user.findUnique({
 			where: {
 				id: payload.sub,

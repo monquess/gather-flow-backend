@@ -68,5 +68,6 @@ export const ApiEventFindSimilar = () =>
 		}),
 		ApiNotFoundResponse({
 			description: 'Event not found',
+			description: 'Event not found',
 		})
 	);

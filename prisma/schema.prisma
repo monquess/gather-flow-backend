@@ -14,13 +14,15 @@ model User {
   email     String   @unique @db.VarChar(255)
   password  String?  @db.VarChar(60)
   verified  Boolean  @default(false)
-  avatar    String
+  avatar    String   @db.VarChar(255)
   provider  Provider @default(LOCAL)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   companies CompanyMember[]
   comments  Comment[]
+  companies CompanyMember[]
+  likes     Like[]
 
   @@map("users")
 }
@@ -35,6 +37,7 @@ model Company {
 
   users  CompanyMember[]
   events Event[]
+  posts  Post[]
 
   @@map("companies")
 }
@@ -50,6 +53,32 @@ model CompanyMember {
 
   @@id([userId, companyId])
   @@map("company_members")
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  content   String
+  poster    String   @db.VarChar(255)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int      @map("company_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  likes Like[]
+
+  @@map("posts")
+}
+
+model Like {
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @map("user_id")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int      @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, postId])
+  @@map("likes")
 }
 
 model Event {

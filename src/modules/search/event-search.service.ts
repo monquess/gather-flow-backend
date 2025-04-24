@@ -12,6 +12,7 @@ import { CompanyEventFilteringOptionsDto } from '@modules/company/dto';
 import { SearchService } from './abstract-search-service';
 import { IndexName } from './enum';
 import { eventMapping } from './mappings/event.mapping';
+import { SortOrder } from '@common/enum/sort-order.enum';
 
 @Injectable()
 export class EventSearchService extends SearchService<Event> implements OnModuleInit {
@@ -60,13 +61,15 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 			}
 		} catch (error) {
 			if (error instanceof Error) {
-				throw new Error(`Failed to initialize ${error.message} index`);
+				throw new Error(`Failed to initialize ${this._index} index: ${error.message}`);
 			}
 		}
 	}
 
 	async search(
 		options: EventFilteringOptionsDto | CompanyEventFilteringOptionsDto,
+		sort: string,
+		order: SortOrder,
 		page: number,
 		limit: number
 	): Promise<[Event[], number]> {
@@ -79,12 +82,10 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 			size: limit,
 			sort: [
 				{
-					_score: {
-						order: 'desc',
-					},
+					[this.getSortableField(sort)]: { order },
 				},
 				{
-					createdAt: {
+					_score: {
 						order: 'desc',
 					},
 				},
@@ -173,12 +174,37 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 				};
 			}
 
+			if (key.toLowerCase().includes('price')) {
+				const operator = key === 'minPrice' ? 'gte' : 'lte';
+				return {
+					range: {
+						ticketPrice: {
+							[operator]: value,
+						},
+					},
+				};
+			}
+
+			if (key === 'status') {
+				return {
+					term: {
+						[key]: value,
+					},
+				};
+			}
+
 			return {
-				term: {
+				terms: {
 					[key]: value,
 				},
 			};
 		});
+
+		if (must.length === 0) {
+			return { match_all: {} };
+		}
+
+		console.log('must', must[0]);
 
 		return {
 			bool: {
@@ -186,4 +212,9 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 			},
 		};
 	}
+
+	private getSortableField = (field: string): string => {
+		const textFields = ['title', 'location', 'description'];
+		return textFields.includes(field) ? `${field}.keyword` : field;
+	};
 }

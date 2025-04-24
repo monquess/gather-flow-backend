@@ -40,10 +40,7 @@ export class CacheInterceptor implements NestInterceptor {
 	}
 
 	trackBy(request: Request): string {
-		const url = new URL(
-			request.url,
-			`${request.protocol}://${request.get('host')}`
-		);
+		const url = new URL(request.url, `${request.protocol}://${request.get('host')}`);
 		url.searchParams.sort();
 
 		return `${url.pathname}?${url.searchParams.toString()}`;

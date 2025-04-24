@@ -9,6 +9,7 @@ import { EventSearchService } from '@modules/search/event-search.service';
 
 import { EventEntity } from './entities/event.entity';
 import { EventFilteringOptionsDto } from './dto/filtering-options.dto';
+import { EventSortingOptionsDto } from './dto';
 
 @Injectable()
 export class EventService {
@@ -19,7 +20,6 @@ export class EventService {
 
 	async index(): Promise<void> {
 		const events = await this.prisma.event.findMany();
-		console.log(events.length);
 		await this.searchService.indexBulk(events);
 	}
 
@@ -33,10 +33,13 @@ export class EventService {
 
 	async findAll(
 		options: EventFilteringOptionsDto,
+		{ sort, order }: EventSortingOptionsDto,
 		{ page, limit }: PaginationOptionsDto
 	): Promise<Paginated<EventEntity>> {
 		const [events, count] = await this.searchService.search(
 			{ ...options, status: EventStatus.PUBLISHED },
+			sort,
+			order,
 			page,
 			limit
 		);

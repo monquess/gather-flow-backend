@@ -6,6 +6,7 @@ import { extname } from 'path';
 import { v4 as uuid } from 'uuid';
 
 import { StorageConfig, storageConfig } from '@modules/config/configs';
+import { StoragePath } from './enum/storage-path.enum';
 
 @Injectable()
 export class S3Service {
@@ -32,7 +33,7 @@ export class S3Service {
 	}
 
 	async uploadFile(
-		path: string,
+		path: StoragePath,
 		file: Express.Multer.File
 	): Promise<{ key: string; url: string }> {
 		try {

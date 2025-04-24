@@ -15,6 +15,7 @@ import {} from '@common/decorators/swagger/api-paginated-response';
 import { EventEntity } from '@modules/event/entities/event.entity';
 import { CompanyEntity } from '../entities/company.entity';
 import { CompanyMemberEntity } from '../entities/company-member.entity';
+import { PostEntity } from '@modules/post/entities/post.entity';
 
 export const ApiCompanyFindAll = () =>
 	applyDecorators(
@@ -27,7 +28,7 @@ export const ApiCompanyFindEvents = () =>
 		ApiOperation({ summary: 'Get paginated company events' }),
 		ApiParam({
 			name: 'id',
-			description: 'company id',
+			description: 'Company id',
 		}),
 		ApiPaginatedResponse<EventEntity>(EventEntity)
 	);
@@ -37,13 +38,13 @@ export const ApiCompanyFindById = () =>
 		ApiOperation({ summary: 'Get company by id' }),
 		ApiParam({
 			name: 'id',
-			description: 'company id',
+			description: 'Company id',
 		}),
 		ApiOkResponse({
 			type: CompanyEntity,
 		}),
 		ApiNotFoundResponse({
-			description: 'Record not found',
+			description: 'Company not found',
 		})
 	);
 
@@ -51,7 +52,9 @@ export const ApiCompanyCreate = () =>
 	applyDecorators(
 		ApiAuth(),
 		ApiOperation({ summary: 'Create company' }),
-		ApiCreatedResponse({ type: CompanyEntity })
+		ApiCreatedResponse({
+			type: CompanyEntity,
+		})
 	);
 
 export const ApiCompanyMemberCreate = () =>
@@ -60,13 +63,15 @@ export const ApiCompanyMemberCreate = () =>
 		ApiOperation({ summary: 'Create company member' }),
 		ApiParam({
 			name: 'companyId',
-			description: 'company id',
+			description: 'Company id',
 		}),
 		ApiParam({
 			name: 'userId',
-			description: 'user id',
+			description: 'User id',
 		}),
-		ApiCreatedResponse({ type: CompanyMemberEntity }),
+		ApiCreatedResponse({
+			type: CompanyMemberEntity,
+		}),
 		ApiNotFoundResponse({
 			description: 'Company not found',
 		}),
@@ -83,19 +88,14 @@ export const ApiEventCreate = () =>
 		ApiAuth(),
 		ApiOperation({ summary: 'Create event' }),
 		ApiParam({
-			name: 'companyId',
-			description: 'company id',
+			name: 'id',
+			description: 'Company id',
 		}),
-		ApiParam({
-			name: 'eventId',
-			description: 'event id',
+		ApiCreatedResponse({
+			type: EventEntity,
 		}),
-		ApiCreatedResponse({ type: EventEntity }),
 		ApiNotFoundResponse({
 			description: 'Company not found',
-		}),
-		ApiNotFoundResponse({
-			description: 'Event not found',
 		}),
 		ApiForbiddenResponse({
 			description: 'Access denied',
@@ -108,9 +108,11 @@ export const ApiCompanyUpdate = () =>
 		ApiOperation({ summary: 'Update company' }),
 		ApiParam({
 			name: 'id',
-			description: 'company id',
+			description: 'Company id',
 		}),
-		ApiOkResponse({ type: CompanyEntity }),
+		ApiOkResponse({
+			type: CompanyEntity,
+		}),
 		ApiNotFoundResponse({
 			description: 'Company not found',
 		}),
@@ -128,13 +130,15 @@ export const ApiCompanyMemberUpdateRole = () =>
 		ApiOperation({ summary: 'Update company member role' }),
 		ApiParam({
 			name: 'companyId',
-			description: 'company id',
+			description: 'Company id',
 		}),
 		ApiParam({
 			name: 'userId',
-			description: 'user id',
+			description: 'User id',
 		}),
-		ApiOkResponse({ type: CompanyMemberEntity }),
+		ApiOkResponse({
+			type: CompanyMemberEntity,
+		}),
 		ApiNotFoundResponse({
 			description: 'Company not found',
 		}),
@@ -152,13 +156,15 @@ export const ApiEventUpdate = () =>
 		ApiOperation({ summary: 'Update event' }),
 		ApiParam({
 			name: 'companyId',
-			description: 'company id',
+			description: 'Company id',
 		}),
 		ApiParam({
 			name: 'eventId',
-			description: 'event id',
+			description: 'Event id',
 		}),
-		ApiOkResponse({ type: EventEntity }),
+		ApiOkResponse({
+			type: EventEntity,
+		}),
 		ApiNotFoundResponse({
 			description: 'Company not found',
 		}),
@@ -176,7 +182,7 @@ export const ApiCompanyRemove = () =>
 		ApiOperation({ summary: 'Delete company' }),
 		ApiParam({
 			name: 'id',
-			description: 'company id',
+			description: 'Company id',
 		}),
 		ApiNoContentResponse(),
 		ApiNotFoundResponse({
@@ -193,11 +199,11 @@ export const ApiCompanyMemberRemove = () =>
 		ApiOperation({ summary: 'Delete company member' }),
 		ApiParam({
 			name: 'companyId',
-			description: 'company id',
+			description: 'Company id',
 		}),
 		ApiParam({
 			name: 'userId',
-			description: 'user id',
+			description: 'User id',
 		}),
 		ApiNoContentResponse(),
 		ApiNotFoundResponse({
@@ -217,11 +223,11 @@ export const ApiEventRemove = () =>
 		ApiOperation({ summary: 'Delete event' }),
 		ApiParam({
 			name: 'companyId',
-			description: 'company id',
+			description: 'Company id',
 		}),
 		ApiParam({
 			name: 'eventId',
-			description: 'event id',
+			description: 'Event id',
 		}),
 		ApiNoContentResponse(),
 		ApiNotFoundResponse({
@@ -229,6 +235,88 @@ export const ApiEventRemove = () =>
 		}),
 		ApiNotFoundResponse({
 			description: 'Event not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
+	);
+
+export const ApiCompanyFindPosts = () =>
+	applyDecorators(
+		ApiOperation({ summary: 'Get paginated company posts' }),
+		ApiParam({
+			name: 'id',
+			description: 'Company id',
+		}),
+		ApiPaginatedResponse<PostEntity>(PostEntity)
+	);
+
+export const ApiCompanyPostCreate = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Create post' }),
+		ApiParam({
+			name: 'id',
+			description: 'Company id',
+		}),
+		ApiCreatedResponse({
+			type: PostEntity,
+		}),
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiNotFoundResponse({
+			description: 'Post not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
+	);
+
+export const ApiCompanyPostUpdate = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Update post' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'Company id',
+		}),
+		ApiParam({
+			name: 'postId',
+			description: 'Post id',
+		}),
+		ApiOkResponse({
+			type: PostEntity,
+		}),
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiNotFoundResponse({
+			description: 'Post not found',
+		}),
+		ApiForbiddenResponse({
+			description: 'Access denied',
+		})
+	);
+
+export const ApiCompanyPostRemove = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Delete event' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'Company id',
+		}),
+		ApiParam({
+			name: 'postId',
+			description: 'Post id',
+		}),
+		ApiNoContentResponse(),
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		}),
+		ApiNotFoundResponse({
+			description: 'Post not found',
 		}),
 		ApiForbiddenResponse({
 			description: 'Access denied',
