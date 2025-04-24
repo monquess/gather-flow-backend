@@ -64,7 +64,7 @@ export class CommentController {
 
 	@ApiCommentRemove()
 	@HttpCode(HttpStatus.NO_CONTENT)
-	@Delete(':id/comment')
+	@Delete(':id')
 	remove(
 		@Param('id', ParseIntPipe) id: number,
 		@CurrentUser() user: User

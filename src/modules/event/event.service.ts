@@ -1,18 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, User } from '@prisma/client';
-// import { getComments } from '@prisma/client/sql';
-
-import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
-import { Paginated } from '@common/pagination/paginated';
-import { getPaginationMeta } from '@common/pagination/paginated-metadata';
-import { PrismaService } from '@modules/prisma/prisma.service';
-import { CommentEntity } from '@modules/comment/entities/comment.entity';
-import { CreateCommentDto } from '@modules/comment/dto';
-import { Injectable } from '@nestjs/common';
-import { EventStatus } from '@prisma/client';
+import { Prisma, User, EventStatus } from '@prisma/client';
 
 import { PaginationOptionsDto, Paginated, getPaginationMeta } from '@common/pagination';
 import { PrismaService } from '@modules/prisma/prisma.service';
+import { CommentEntity } from '@modules/comment/entities/comment.entity';
+import { CreateCommentDto } from '@modules/comment/dto';
 import { EventSearchService } from '@modules/search/event-search.service';
 
 import { EventEntity } from './entities/event.entity';
