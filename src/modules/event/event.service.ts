@@ -100,17 +100,19 @@ export class EventService {
 
 		const result = await this.prisma.$transaction(async (prisma) => {
 			const tickets = await Promise.all(
-				Array(dto.quantity).map(() =>
-					prisma.ticket.create({
-						data: {
-							userId: user.id,
-							eventId,
-							ticketCode: this.ticketService.generateTicketCode(),
-							finalPrice: event.ticketPrice,
-							purchaseDate: new Date(),
-						},
-					})
-				)
+				Array(dto.quantity)
+					.fill(null)
+					.map(() =>
+						prisma.ticket.create({
+							data: {
+								userId: user.id,
+								eventId,
+								ticketCode: this.ticketService.generateTicketCode(),
+								finalPrice: event.ticketPrice,
+								purchaseDate: new Date(),
+							},
+						})
+					)
 			);
 
 			await prisma.event.update({
@@ -124,30 +126,19 @@ export class EventService {
 				},
 			});
 
-			const session = await this.stripeService.createCheckoutSession(
+			const paymentIntent = await this.stripeService.createPaymentIntent(
 				event.title,
 				event.ticketPrice,
 				dto.quantity,
 				{
 					userId: user.id.toString(),
 					eventId: eventId.toString(),
+					companyId: event.companyId.toString(),
 					ticketIds: tickets.map((t) => t.id).join(','),
 				}
 			);
 
-			await prisma.payment.create({
-				data: {
-					userId: user.id,
-					transactionId: session.id,
-					tickets: {
-						create: tickets.map((ticket) => ({
-							ticketId: ticket.id,
-						})),
-					},
-				},
-			});
-
-			return { checkoutUrl: session.url, sessionId: session.id };
+			return { clientSecret: paymentIntent.client_secret };
 		});
 
 		return result;

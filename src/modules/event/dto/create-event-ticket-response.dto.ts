@@ -2,14 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEventTicketResponseDto {
 	@ApiProperty({
-		example: 'https://checkout.stripe.com/c/pay/a1tNQAEUd7FcHu',
+		example: 'pi_21HDFSBS108U_secret_2SDF6DFX',
 		type: String,
 	})
-	checkoutUrl: string | null;
-
-	@ApiProperty({
-		example: 'a1tNQAEUd7FcHu',
-		type: String,
-	})
-	sessionId: string;
+	clientSecret: string;
 }

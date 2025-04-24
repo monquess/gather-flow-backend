@@ -65,29 +65,38 @@ export class StripeService {
 		}
 	}
 
-	async createCheckoutSession(
+	async createPaymentIntent(
 		itemTitle: string,
 		itemPrice: Prisma.Decimal,
 		itemQuantity: number,
 		metadata?: Stripe.Metadata
-	) {
-		return this.stripe.checkout.sessions.create({
+	): Promise<Stripe.PaymentIntent & { client_secret: string }> {
+		const company = await this.companyService.findById(
+			Number(metadata?.companyId)
+		);
+
+		if (!company?.stripeAccountId) {
+			// TODO: add check for stripe account id before creating event
+			throw new BadRequestException(
+				'Company does not have a connected Stripe account'
+			);
+		}
+
+		const paymentIntent = await this.stripe.paymentIntents.create({
+			amount: itemPrice.mul(100).round().toNumber(),
+			currency: 'usd',
 			payment_method_types: ['card'],
-			line_items: [
-				{
-					price_data: {
-						currency: 'usd',
-						product_data: { name: `${itemTitle} Ticket` },
-						unit_amount: itemPrice.mul(100).round().toNumber(),
-					},
-					quantity: itemQuantity,
-				},
-			],
-			mode: 'payment',
-			success_url: `${this.configService.get('CLIENT_URL')}/payments/success`,
-			cancel_url: `${this.configService.get('CLIENT_URL')}/payments/cancel`,
+			transfer_data: {
+				destination: company.stripeAccountId,
+			},
 			metadata,
 		});
+
+		if (!paymentIntent.client_secret) {
+			throw new Error('Failed to create Payment Intent: client_secret is null');
+		}
+
+		return paymentIntent as Stripe.PaymentIntent & { client_secret: string };
 	}
 
 	async handleStripeWebhook(req: RawBodyRequest<Request>): Promise<void> {
@@ -105,19 +114,19 @@ export class StripeService {
 			throw new BadRequestException('Webhook Error: Invalid signature');
 		}
 
-		if (event.type === 'checkout.session.completed') {
+		if (event.type === 'payment_intent.succeeded') {
 			await this.handleCheckoutCompleted(event.data.object);
-		} else if (event.type === 'checkout.session.expired') {
+		} else if (event.type === 'payment_intent.payment_failed') {
 			await this.handleCheckoutExpired(event.data.object);
 		}
 	}
 
 	async handleCheckoutCompleted(
-		session: Stripe.Checkout.Session
+		paymentIntent: Stripe.PaymentIntent
 	): Promise<void> {
 		await this.prisma.payment.updateMany({
 			where: {
-				transactionId: session.id,
+				transactionId: paymentIntent.id,
 			},
 			data: {
 				status: PaymentStatus.COMPLETED,
@@ -125,11 +134,13 @@ export class StripeService {
 		});
 	}
 
-	async handleCheckoutExpired(session: Stripe.Checkout.Session): Promise<void> {
+	async handleCheckoutExpired(
+		paymentIntent: Stripe.PaymentIntent
+	): Promise<void> {
 		await this.prisma.$transaction(async (prisma) => {
 			const payment = await prisma.payment.findFirst({
 				where: {
-					transactionId: session.id,
+					transactionId: paymentIntent.id,
 				},
 				include: {
 					tickets: {
@@ -162,7 +173,7 @@ export class StripeService {
 
 			await prisma.event.update({
 				where: {
-					id: Number(session.metadata?.eventId),
+					id: Number(paymentIntent.metadata?.eventId),
 				},
 				data: {
 					ticketsSold: {
