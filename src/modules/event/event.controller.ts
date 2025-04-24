@@ -2,18 +2,21 @@ import { Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/commo
 
 import { Public } from '@common/decorators/public.decorator';
 import { Paginated, PaginationOptionsDto } from '@common/pagination';
+import { Environment } from '@common/decorators/environment.decorator';
+import { NodeEnv } from '@common/enum/node-env.enum';
 
 import {
 	ApiEventFindAll,
 	ApiEventFindById,
 	ApiEventFindSimilar,
 } from './decorators/api-event.decorator';
-import { EventFilteringOptionsDto } from './dto/filtering-options.dto';
+import {
+	EventFilteringOptionsDto,
+	EventSortingOptionsDto,
+	SimilarEventsQueryDto,
+} from './dto';
 import { EventEntity } from './entities/event.entity';
 import { EventService } from './event.service';
-import { SimilarEventsQueryDto } from './dto/similar-events-query.dto';
-import { Environment } from '@common/decorators/environment.decorator';
-import { NodeEnv } from '@common/enum/node-env.enum';
 
 @Controller('events')
 export class EventController {
@@ -38,9 +41,10 @@ export class EventController {
 	@Get()
 	findAll(
 		@Query() filteringOptions: EventFilteringOptionsDto,
+		@Query() sortingOptions: EventSortingOptionsDto,
 		@Query() paginationOptions: PaginationOptionsDto
 	): Promise<Paginated<EventEntity>> {
-		return this.eventService.findAll(filteringOptions, paginationOptions);
+		return this.eventService.findAll(filteringOptions, sortingOptions, paginationOptions);
 	}
 
 	@ApiEventFindSimilar()

@@ -17,6 +17,8 @@ import { User } from '@prisma/client';
 
 import {
 	CompanyFilteringOptionsDto,
+	CreateEventDto,
+	UpdateEventDto,
 	CompanyEventFilteringOptionsDto,
 	CreateCompanyDto,
 	UpdateCompanyDto,
@@ -26,7 +28,7 @@ import {
 import { CompanyEntity } from './entities/company.entity';
 import { CompanyMemberEntity } from './entities/company-member.entity';
 
-import { Public, CurrentUser } from '@common/decorators';
+import { Public, CurrentUser, UploadedImage } from '@common/decorators';
 import { Paginated, PaginationOptionsDto } from '@common/pagination';
 
 import {
@@ -42,19 +44,17 @@ import {
 	ApiEventCreate,
 	ApiEventRemove,
 	ApiEventUpdate,
-	ApiPostCreate,
-	ApiPostRemove,
-	ApiPostUpdate,
+	ApiCompanyFindPosts,
+	ApiCompanyPostCreate,
+	ApiCompanyPostRemove,
+	ApiCompanyPostUpdate,
 } from './decorators/api-company.decorator';
 import { CompanyService } from './company.service';
 
-import { CreateEventDto } from '@modules/company/dto/create-event.dto';
 import { EventEntity } from '@modules/event/entities/event.entity';
-import { UpdateEventDto } from '@modules/company/dto/update-event.dto';
-import { CreatePostDto } from '@modules/post/dto/create-post.dto';
-import { UpdatePostDto } from '@modules/post/dto/update-post.dto';
 import { PostEntity } from '@modules/post/entities/post.entity';
-import { UploadedImage } from '@common/decorators/uploaded-image.decorator';
+import { CreatePostDto, UpdatePostDto, PostSortingOptionsDto } from '@modules/post/dto';
+import { EventSortingOptionsDto } from '@modules/event/dto';
 
 @Controller('companies')
 export class CompanyController {
@@ -76,10 +76,17 @@ export class CompanyController {
 	findEvents(
 		@Param('id', ParseIntPipe) id: number,
 		@Query() filteringOptions: CompanyEventFilteringOptionsDto,
+		@Query() sortingOptions: EventSortingOptionsDto,
 		@Query() paginationOptions: PaginationOptionsDto,
 		@CurrentUser() user: User
 	): Promise<Paginated<EventEntity>> {
-		return this.companyService.findEvents(id, filteringOptions, paginationOptions, user);
+		return this.companyService.findEvents(
+			id,
+			filteringOptions,
+			sortingOptions,
+			paginationOptions,
+			user
+		);
 	}
 
 	@ApiCompanyFindById()
@@ -203,9 +210,26 @@ export class CompanyController {
 		return this.companyService.removeEvent(companyId, eventId, user);
 	}
 
-	@ApiPostCreate()
+	@ApiCompanyFindPosts()
+	@Public()
+	@Get(':companyId/posts')
+	findPosts(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Query() sortingOptions: PostSortingOptionsDto,
+		@Query() paginationOptions: PaginationOptionsDto,
+		@CurrentUser() user: User
+	) {
+		return this.companyService.findPosts(
+			companyId,
+			sortingOptions,
+			paginationOptions,
+			user
+		);
+	}
+
+	@ApiCompanyPostCreate()
 	@UseInterceptors(FileInterceptor('poster'))
-	@Post(':id/posts')
+	@Post(':companyId/posts')
 	createPost(
 		@Param('companyId', ParseIntPipe) companyId: number,
 		@Body() dto: CreatePostDto,
@@ -215,7 +239,7 @@ export class CompanyController {
 		return this.companyService.createPost(companyId, dto, user, poster);
 	}
 
-	@ApiPostUpdate()
+	@ApiCompanyPostUpdate()
 	@UseInterceptors(FileInterceptor('poster'))
 	@Patch(':companyId/posts/:postId')
 	updatePost(
@@ -228,7 +252,7 @@ export class CompanyController {
 		return this.companyService.updatePost(companyId, postId, dto, user, poster);
 	}
 
-	@ApiPostRemove()
+	@ApiCompanyPostRemove()
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Delete(':companyId/posts/:postId')
 	removePost(

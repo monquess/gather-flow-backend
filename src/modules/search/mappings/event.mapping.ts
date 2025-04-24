@@ -8,6 +8,12 @@ const autocompleteTextProperty: MappingProperty = {
 	term_vector: 'yes',
 	analyzer: 'autocomplete',
 	search_analyzer: 'autocomplete',
+	fields: {
+		keyword: {
+			type: 'keyword',
+			ignore_above: 256,
+		},
+	},
 };
 
 export const eventMapping: MappingTypeMapping = {
@@ -19,6 +25,12 @@ export const eventMapping: MappingTypeMapping = {
 			term_vector: 'yes',
 			analyzer: 'description_autocomplete',
 			search_analyzer: 'standard',
+			fields: {
+				keyword: {
+					type: 'keyword',
+					ignore_above: 256,
+				},
+			},
 		},
 		companyId: {
 			type: 'integer',

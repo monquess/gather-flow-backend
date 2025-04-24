@@ -35,7 +35,13 @@ export class PostEntity {
 		type: Number,
 		example: 25,
 	})
-	likes?: number;
+	likes: number;
+
+	@ApiProperty({
+		type: Boolean,
+		example: true,
+	})
+	liked: boolean;
 
 	@ApiProperty({
 		type: String,

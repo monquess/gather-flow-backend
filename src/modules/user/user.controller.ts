@@ -14,6 +14,7 @@ import {
 	UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { User } from '@prisma/client';
 
 import { UserService } from './user.service';
 import { UserEntity } from './entities/user.entity';
@@ -28,10 +29,8 @@ import {
 } from './decorators/api-user.decorator';
 import { FilteringOptionsDto, UpdateUserDto, UpdatePasswordDto } from './dto';
 
-import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { User } from '@prisma/client';
-import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
-import { UploadedImage } from '@common/decorators/uploaded-image.decorator';
+import { CurrentUser, UploadedImage } from '@common/decorators';
+import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 
 @UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
 @SerializeOptions({ type: UserEntity })

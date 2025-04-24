@@ -8,11 +8,15 @@ import {
 	Query,
 	HttpCode,
 	HttpStatus,
+	ClassSerializerInterceptor,
+	SerializeOptions,
+	UseInterceptors,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 
 import { CurrentUser, Public } from '@common/decorators';
 import { Paginated, PaginationOptionsDto } from '@common/pagination';
+import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 
 import { PostService } from './post.service';
 import { PostEntity } from './entities/post.entity';
@@ -22,7 +26,10 @@ import {
 	ApiPostFindById,
 	ApiPostRemoveLike,
 } from './decorators/api-post.decorator';
+import { PostSortingOptionsDto } from './dto';
 
+@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
+@SerializeOptions({ type: PostEntity })
 @Controller('posts')
 export class PostController {
 	constructor(private readonly postService: PostService) {}
@@ -30,17 +37,22 @@ export class PostController {
 	@ApiPostFindById()
 	@Public()
 	@Get(':id')
-	findById(@Param('id', ParseIntPipe) id: number): Promise<PostEntity> {
-		return this.postService.findById(id);
+	findById(
+		@Param('id', ParseIntPipe) id: number,
+		@CurrentUser() user: User
+	): Promise<PostEntity> {
+		return this.postService.findById(id, user);
 	}
 
 	@ApiPostFindAll()
 	@Public()
 	@Get()
 	findAll(
-		@Query() { page, limit }: PaginationOptionsDto
+		@Query() sortingOptions: PostSortingOptionsDto,
+		@Query() { page, limit }: PaginationOptionsDto,
+		@CurrentUser() user: User
 	): Promise<Paginated<PostEntity>> {
-		return this.postService.findAll(page, limit);
+		return this.postService.findAll(sortingOptions, page, limit, user);
 	}
 
 	@ApiPostCreateLike()

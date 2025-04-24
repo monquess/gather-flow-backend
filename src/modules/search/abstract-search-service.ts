@@ -1,4 +1,6 @@
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+
+import { SortOrder } from '@common/enum/sort-order.enum';
 import { Document } from './interface/document.interface';
 
 export abstract class SearchService<T extends Document> {
@@ -13,6 +15,8 @@ export abstract class SearchService<T extends Document> {
 
 	abstract search(
 		query: Record<string, unknown>,
+		sort: string,
+		order: SortOrder,
 		page: number,
 		limit: number
 	): Promise<[T[], number]>;

@@ -13,23 +13,27 @@ import {
 	UpdateCompanyMemberRoleDto,
 	CompanyFilteringOptionsDto,
 	CompanyEventFilteringOptionsDto,
+	CreateEventDto,
+	UpdateEventDto,
 } from './dto';
 
 import { CompanyMemberEntity } from './entities/company-member.entity';
 import { CompanyEntity } from './entities/company.entity';
 import { PublishEventJobData } from './interfaces/publish-event-job-data.interface';
 
-import { CreateEventDto } from '@modules/company/dto/create-event.dto';
-import { S3Service } from '@modules/s3/s3.service';
-import { EventEntity } from '@modules/event/entities/event.entity';
-import { UpdateEventDto } from '@modules/company/dto/update-event.dto';
-import { EventService } from '@modules/event/event.service';
-import { PrismaService } from '@modules/prisma/prisma.service';
 import { AppConfig, appConfig } from '@modules/config/configs';
-import { EventSearchService } from '@modules/search/event-search.service';
-import { CreatePostDto, UpdatePostDto } from '@modules/post/dto';
-import { PostEntity } from '@modules/post/entities/post.entity';
+import { PrismaService } from '@modules/prisma/prisma.service';
 import { StoragePath } from '@modules/s3/enum/storage-path.enum';
+import { S3Service } from '@modules/s3/s3.service';
+
+import { EventSortingOptionsDto } from '@modules/event/dto';
+import { EventEntity } from '@modules/event/entities/event.entity';
+import { EventService } from '@modules/event/event.service';
+import { EventSearchService } from '@modules/search/event-search.service';
+
+import { CreatePostDto, UpdatePostDto, PostSortingOptionsDto } from '@modules/post/dto';
+import { PostEntity } from '@modules/post/entities/post.entity';
+import { SortFields } from '@modules/post/enum/sort-fields.enum';
 import { PostService } from '@modules/post/post.service';
 
 @Injectable()
@@ -90,6 +94,7 @@ export class CompanyService {
 	async findEvents(
 		companyId: number,
 		options: CompanyEventFilteringOptionsDto,
+		{ sort, order }: EventSortingOptionsDto,
 		{ page, limit }: PaginationOptionsDto,
 		user: User
 	): Promise<Paginated<EventEntity>> {
@@ -99,6 +104,8 @@ export class CompanyService {
 		const status = role === CompanyRole.ADMIN ? options.status : EventStatus.PUBLISHED;
 		const [events, count] = await this.eventSearchService.search(
 			{ ...options, status },
+			sort,
+			order,
 			page,
 			limit
 		);
@@ -306,7 +313,6 @@ export class CompanyService {
 		const currentUserMembership = company.users?.find((u) => u.userId === user.id);
 
 		if (currentUserMembership?.role !== CompanyRole.ADMIN && user.id !== targetUserId) {
-			// can't delete members except yourself if you are not admin
 			throw new ForbiddenException('Access denied');
 		}
 
@@ -347,6 +353,51 @@ export class CompanyService {
 		});
 	}
 
+	async findPosts(
+		companyId: number,
+		{ sort, order }: PostSortingOptionsDto,
+		{ page, limit }: PaginationOptionsDto,
+		user?: User
+	): Promise<Paginated<PostEntity>> {
+		const where: Prisma.PostWhereInput = {
+			companyId,
+		};
+
+		// prettier-ignore
+		const orderBy =	sort === SortFields.LIKES ? { likes: { _count: order } } : { [sort]: order };
+
+		const [posts, count] = await this.prisma.$transaction([
+			this.prisma.post.findMany({
+				where,
+				include: {
+					_count: {
+						select: {
+							likes: true,
+						},
+					},
+					likes: {
+						where: {
+							userId: user?.id,
+						},
+					},
+				},
+				take: limit,
+				skip: (page - 1) * limit,
+				orderBy,
+			}),
+			this.prisma.post.count({ where }),
+		]);
+
+		return {
+			data: posts.map(({ _count, ...post }) => ({
+				...post,
+				likes: _count.likes,
+				liked: post.likes.length > 0,
+			})),
+			meta: getPaginationMeta(count, page, limit),
+		};
+	}
+
 	async createPost(
 		companyId: number,
 		dto: CreatePostDto,
@@ -361,13 +412,19 @@ export class CompanyService {
 			posterUrl = url;
 		}
 
-		return this.prisma.post.create({
+		const post = await this.prisma.post.create({
 			data: {
 				...dto,
 				companyId,
 				poster: posterUrl,
 			},
 		});
+
+		return {
+			...post,
+			likes: 0,
+			liked: false,
+		};
 	}
 
 	async updatePost(
@@ -391,7 +448,7 @@ export class CompanyService {
 			posterUrl = url;
 		}
 
-		return this.prisma.post.update({
+		const { _count, ...result } = await this.prisma.post.update({
 			where: {
 				id: postId,
 			},
@@ -399,7 +456,25 @@ export class CompanyService {
 				...dto,
 				poster: posterUrl,
 			},
+			include: {
+				_count: {
+					select: {
+						likes: true,
+					},
+				},
+				likes: {
+					where: {
+						userId: user.id,
+					},
+				},
+			},
 		});
+
+		return {
+			...result,
+			likes: _count.likes,
+			liked: result.likes.length > 0,
+		};
 	}
 
 	async removePost(companyId: number, postId: number, user: User): Promise<void> {

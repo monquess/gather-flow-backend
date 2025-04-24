@@ -1,7 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Format, Theme } from '@prisma/client';
-import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
+import { Transform, Type } from 'class-transformer';
+import {
+	IsDate,
+	IsEnum,
+	IsNotEmpty,
+	IsNumber,
+	IsOptional,
+	IsString,
+	Min,
+} from 'class-validator';
 
 export class EventFilteringOptionsDto {
 	@ApiProperty({
@@ -16,23 +25,53 @@ export class EventFilteringOptionsDto {
 
 	@ApiProperty({
 		type: String,
+		isArray: true,
 		enum: Format,
-		example: Format.CONFERENCE,
+		example: [Format.CONFERENCE, Format.LECTURE],
 		required: false,
 	})
 	@IsOptional()
-	@IsEnum(Format)
+	@IsEnum(Format, { each: true })
+	@Transform(({ value }: { value: Format }) => {
+		return Array.isArray(value) ? value : [value];
+	})
 	readonly format?: Format;
 
 	@ApiProperty({
 		type: String,
 		enum: Theme,
-		example: Theme.BUSINESS,
+		isArray: true,
+		example: [Theme.BUSINESS, Theme.OTHER],
 		required: false,
 	})
 	@IsOptional()
-	@IsEnum(Theme)
+	@IsEnum(Theme, { each: true })
+	@Transform(({ value }: { value: Theme }) => {
+		return Array.isArray(value) ? value : [value];
+	})
 	readonly theme?: Theme;
+
+	@ApiProperty({
+		type: Number,
+		example: 19.25,
+		required: false,
+	})
+	@IsOptional()
+	@IsNumber({ maxDecimalPlaces: 2 })
+	@Min(0)
+	@Type(() => Number)
+	readonly minPrice?: number;
+
+	@ApiProperty({
+		type: Number,
+		example: 150.0,
+		required: false,
+	})
+	@IsOptional()
+	@IsNumber({ maxDecimalPlaces: 2 })
+	@Min(0)
+	@Type(() => Number)
+	readonly maxPrice?: number;
 
 	@ApiProperty({
 		type: String,

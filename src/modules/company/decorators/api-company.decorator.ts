@@ -28,7 +28,7 @@ export const ApiCompanyFindEvents = () =>
 		ApiOperation({ summary: 'Get paginated company events' }),
 		ApiParam({
 			name: 'id',
-			description: 'company id',
+			description: 'Company id',
 		}),
 		ApiPaginatedResponse<EventEntity>(EventEntity)
 	);
@@ -241,7 +241,17 @@ export const ApiEventRemove = () =>
 		})
 	);
 
-export const ApiPostCreate = () =>
+export const ApiCompanyFindPosts = () =>
+	applyDecorators(
+		ApiOperation({ summary: 'Get paginated company posts' }),
+		ApiParam({
+			name: 'id',
+			description: 'Company id',
+		}),
+		ApiPaginatedResponse<PostEntity>(PostEntity)
+	);
+
+export const ApiCompanyPostCreate = () =>
 	applyDecorators(
 		ApiAuth(),
 		ApiOperation({ summary: 'Create post' }),
@@ -263,7 +273,7 @@ export const ApiPostCreate = () =>
 		})
 	);
 
-export const ApiPostUpdate = () =>
+export const ApiCompanyPostUpdate = () =>
 	applyDecorators(
 		ApiAuth(),
 		ApiOperation({ summary: 'Update post' }),
@@ -289,7 +299,7 @@ export const ApiPostUpdate = () =>
 		})
 	);
 
-export const ApiPostRemove = () =>
+export const ApiCompanyPostRemove = () =>
 	applyDecorators(
 		ApiAuth(),
 		ApiOperation({ summary: 'Delete event' }),
