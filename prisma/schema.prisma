@@ -19,9 +19,8 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  companies     CompanyMember[]
-  subscriptions EventSubscription[]
-  Comment       Comment[]
+  companies CompanyMember[]
+  comments  Comment[]
 
   @@map("users")
 }
@@ -29,18 +28,10 @@ model User {
 model Company {
   id          Int      @id @default(autoincrement())
   name        String   @db.VarChar(255)
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(255)
   description String?
   email       String   @unique @db.VarChar(255)
   location    String   @db.VarChar(255)
   createdAt   DateTime @default(now()) @map("created_at")
-
-  users     CompanyMember[]
-  events    Event[]
-  email     String          @unique @db.VarChar(255)
-  location  String          @db.VarChar(255)
-  createdAt DateTime        @default(now()) @map("created_at")
 
   users  CompanyMember[]
   events Event[]
@@ -80,9 +71,7 @@ model Event {
   company            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId          Int                @map("company_id")
 
-  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  companyId Int       @map("company_id")
-  Comment   Comment[]
+  comments Comment[]
 
   @@map("events")
 }

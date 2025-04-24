@@ -9,11 +9,7 @@ export class CreateCompanyMemberDto {
 		enum: CompanyRole,
 		example: CompanyRole.MEMBER,
 	})
-	@Transform(({ value }) => {
-		if (typeof value === 'string') {
-			return value.toUpperCase();
-		}
-	})
+	@IsOptional()
 	@IsEnum(CompanyRole)
 	@Transform(({ value }) => {
 		if (typeof value === 'string') {

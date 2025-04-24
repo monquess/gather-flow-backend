@@ -51,9 +51,7 @@ export class UserController {
 
 	@ApiUserFindAll()
 	@Get()
-	findAll(
-		@Query() filteringOptions: FilteringOptionsDto
-	): Promise<UserEntity[]> {
+	findAll(@Query() filteringOptions: FilteringOptionsDto): Promise<UserEntity[]> {
 		return this.userService.findAll(filteringOptions);
 	}
 

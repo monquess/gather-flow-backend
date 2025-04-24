@@ -77,12 +77,11 @@ export class EventService {
 					in: ids,
 				},
 			},
-	async findById(id: number): Promise<EventEntity> {
-		return this.prisma.event.findUniqueOrThrow({
-			where: {
-				id,
-			},
 		});
+
+		return ids
+			.map((id) => events.find((e) => e.id === id))
+			.filter((e) => e !== undefined);
 	}
 
 	async findComments(
@@ -133,9 +132,5 @@ export class EventService {
 				authorId: user.id,
 			},
 		});
-
-		return ids
-			.map((id) => events.find((e) => e.id === id))
-			.filter((e) => e !== undefined);
 	}
 }

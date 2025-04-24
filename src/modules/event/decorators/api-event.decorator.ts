@@ -67,17 +67,6 @@ export const ApiEventFindSimilar = () =>
 			type: [EventEntity],
 		}),
 		ApiNotFoundResponse({
-			description: 'Record not found',
-		})
-	);
-
-export const ApiEventFindSimilar = () =>
-	applyDecorators(
-		ApiOperation({ summary: 'Get similar events by event id' }),
-		ApiOkResponse({
-			type: [EventEntity],
-		}),
-		ApiNotFoundResponse({
-			description: 'Record not found',
+			description: 'Event not found',
 		})
 	);
