@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CompanyRole } from '@prisma/client';
+import { Transform } from 'class-transformer';
 import { IsEnum, IsOptional } from 'class-validator';
 
 export class CreateCompanyMemberDto {
@@ -8,7 +9,16 @@ export class CreateCompanyMemberDto {
 		enum: CompanyRole,
 		example: CompanyRole.MEMBER,
 	})
-	@IsOptional()
+	@Transform(({ value }) => {
+		if (typeof value === 'string') {
+			return value.toUpperCase();
+		}
+	})
 	@IsEnum(CompanyRole)
+	@Transform(({ value }) => {
+		if (typeof value === 'string') {
+			return value.toUpperCase();
+		}
+	})
 	readonly role?: CompanyRole;
 }

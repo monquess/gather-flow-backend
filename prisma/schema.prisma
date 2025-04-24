@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["typedSql"]
 }
 
 datasource db {
@@ -20,6 +21,7 @@ model User {
 
   companies     CompanyMember[]
   subscriptions EventSubscription[]
+  Comment       Comment[]
 
   @@map("users")
 }
@@ -27,10 +29,18 @@ model User {
 model Company {
   id          Int      @id @default(autoincrement())
   name        String   @db.VarChar(255)
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
   description String?
   email       String   @unique @db.VarChar(255)
   location    String   @db.VarChar(255)
   createdAt   DateTime @default(now()) @map("created_at")
+
+  users     CompanyMember[]
+  events    Event[]
+  email     String          @unique @db.VarChar(255)
+  location  String          @db.VarChar(255)
+  createdAt DateTime        @default(now()) @map("created_at")
 
   users  CompanyMember[]
   events Event[]
@@ -44,7 +54,8 @@ model CompanyMember {
   company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId Int         @map("company_id")
   role      CompanyRole @default(MEMBER)
-  createdAt DateTime    @default(now()) @map("created_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@id([userId, companyId])
   @@map("company_members")
@@ -56,12 +67,12 @@ model Event {
   description        String?
   format             Format
   theme              Theme
+  visitorsVisibility VisitorsVisibility @default(EVERYONE) @map("visitors_visibillity")
+  status             EventStatus        @default(DRAFT)
   location           String             @db.VarChar(255)
   ticketPrice        Decimal            @map("ticket_price") @db.Decimal(10, 2)
   ticketsQuantity    Int                @map("tickets_quantity")
   poster             String
-  visitorsVisibility VisitorsVisibility @default(EVERYONE) @map("visitors_visibillity")
-  status             EventStatus        @default(DRAFT)
   startDate          DateTime           @map("start_date")
   endDate            DateTime?          @map("end_date")
   publishDate        DateTime?          @map("publish_date")
@@ -69,20 +80,29 @@ model Event {
   company            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId          Int                @map("company_id")
 
-  subscriptions EventSubscription[]
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int       @map("company_id")
+  Comment   Comment[]
 
   @@map("events")
 }
 
-model EventSubscription {
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int      @map("user_id")
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId   Int      @map("event_id")
-  createdAt DateTime @default(now()) @map("created_at")
+model Comment {
+  id       Int      @id @default(autoincrement())
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId Int      @map("author_id")
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId  Int      @map("event_id")
+  parent   Comment? @relation("ParentComment", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId Int?     @map("parent_id")
+  content  String
 
-  @@id([userId, eventId])
-  @@map("event_subscriptions")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  replies Comment[] @relation("ParentComment")
+
+  @@map("comments")
 }
 
 enum Provider {

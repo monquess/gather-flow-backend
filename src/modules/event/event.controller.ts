@@ -1,20 +1,39 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import {
+	Body,
+	ClassSerializerInterceptor,
+	Controller,
+	Get,
+	Param,
+	ParseIntPipe,
+	Post,
+	Post,
+	Query,
+	UseInterceptors,
+} from '@nestjs/common';
+import { User } from '@prisma/client';
 
 import { Public } from '@common/decorators/public.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Paginated, PaginationOptionsDto } from '@common/pagination';
+import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
+import { CommentEntity } from '@modules/comment/entities/comment.entity';
+import { CreateCommentDto } from '@modules/comment/dto';
 
 import {
+	ApiEventCreateComment,
 	ApiEventFindAll,
 	ApiEventFindById,
+	ApiEventFindComments,
 	ApiEventFindSimilar,
 } from './decorators/api-event.decorator';
-import { EventFilteringOptionsDto } from './dto/filtering-options.dto';
+import { EventFilteringOptionsDto } from './dto';
 import { EventEntity } from './entities/event.entity';
 import { EventService } from './event.service';
 import { SimilarEventsQueryDto } from './dto/similar-events-query.dto';
 import { Environment } from '@common/decorators/environment.decorator';
 import { NodeEnv } from '@common/enum/node-env.enum';
 
+@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
 @Controller('events')
 export class EventController {
 	constructor(private readonly eventService: EventService) {}
@@ -51,5 +70,25 @@ export class EventController {
 		@Query() { limit }: SimilarEventsQueryDto
 	): Promise<EventEntity[]> {
 		return this.eventService.findSimilar(id, limit);
+	}
+
+	@ApiEventFindComments()
+	@Public()
+	@Get(':id/comments')
+	findComment(
+		@Param('id', ParseIntPipe) id: number,
+		@Query() paginationOptions: PaginationOptionsDto
+	): Promise<Paginated<CommentEntity>> {
+		return this.eventService.findComments(id, paginationOptions);
+	}
+
+	@ApiEventCreateComment()
+	@Post(':id/comments')
+	createComment(
+		@Param('id', ParseIntPipe) id: number,
+		@Body() dto: CreateCommentDto,
+		@CurrentUser() user: User
+	): Promise<CommentEntity> {
+		return this.eventService.createComment(id, dto, user);
 	}
 }
