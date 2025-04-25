@@ -28,6 +28,17 @@ export class EventService {
 			where: {
 				id,
 			},
+			include: {
+				company: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
+			},
+			omit: {
+				companyId: true,
+			},
 		});
 	}
 
@@ -51,6 +62,17 @@ export class EventService {
 					in: ids,
 				},
 			},
+			include: {
+				company: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
+			},
+			omit: {
+				companyId: true,
+			},
 		});
 
 		return {
@@ -71,6 +93,17 @@ export class EventService {
 				id: {
 					in: ids,
 				},
+			},
+			include: {
+				company: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
+			},
+			omit: {
+				companyId: true,
 			},
 		});
 

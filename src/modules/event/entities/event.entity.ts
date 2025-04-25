@@ -1,4 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { CompanyEntity } from '@modules/company/entities/company.entity';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 import { Format, Prisma, Theme, VisitorsVisibility } from '@prisma/client';
 
 export class EventEntity {
@@ -9,10 +10,14 @@ export class EventEntity {
 	id: number;
 
 	@ApiProperty({
-		example: 1,
-		type: Number,
+		type: PickType(CompanyEntity, ['id', 'name']),
+		example: {
+			id: 1,
+			name: 'Monquess',
+		},
+		required: false,
 	})
-	companyId: number;
+	company?: Pick<CompanyEntity, 'id' | 'name'>;
 
 	@ApiProperty({
 		example: 'Tech Conference',

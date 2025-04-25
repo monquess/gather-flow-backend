@@ -18,6 +18,12 @@ export class PostService {
 				id,
 			},
 			include: {
+				company: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
 				_count: {
 					select: {
 						likes: true,
@@ -28,6 +34,9 @@ export class PostService {
 						userId: user?.id,
 					},
 				},
+			},
+			omit: {
+				companyId: true,
 			},
 		});
 
@@ -50,6 +59,12 @@ export class PostService {
 		const [posts, count] = await this.prisma.$transaction([
 			this.prisma.post.findMany({
 				include: {
+					company: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
 					_count: {
 						select: {
 							likes: true,
@@ -60,6 +75,9 @@ export class PostService {
 							userId: user?.id,
 						},
 					},
+				},
+				omit: {
+					companyId: true,
 				},
 				take: limit,
 				skip: (page - 1) * limit,

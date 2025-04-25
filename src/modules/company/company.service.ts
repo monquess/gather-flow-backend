@@ -57,7 +57,21 @@ export class CompanyService {
 		const { _count, rating, ...company } = await this.prisma.company.findUniqueOrThrow({
 			where: { id },
 			include: {
-				users: true,
+				users: {
+					include: {
+						user: {
+							select: {
+								id: true,
+								username: true,
+								avatar: true,
+							},
+						},
+					},
+					omit: {
+						companyId: true,
+						userId: true,
+					},
+				},
 				_count: {
 					select: {
 						reviews: true,
@@ -93,7 +107,21 @@ export class CompanyService {
 					createdAt: 'desc',
 				},
 				include: {
-					users: true,
+					users: {
+						include: {
+							user: {
+								select: {
+									id: true,
+									username: true,
+									avatar: true,
+								},
+							},
+						},
+						omit: {
+							companyId: true,
+							userId: true,
+						},
+					},
 					_count: {
 						select: {
 							reviews: true,
@@ -122,7 +150,7 @@ export class CompanyService {
 		user: User
 	): Promise<Paginated<EventEntity>> {
 		const company = await this.findById(companyId);
-		const role = company.users?.find((u) => u.userId === user?.id)?.role;
+		const role = company.users?.find((u) => u.user.id === user?.id)?.role;
 
 		const status = role === CompanyRole.ADMIN ? options.status : EventStatus.PUBLISHED;
 		const [events, count] = await this.eventSearchService.search(
@@ -139,6 +167,17 @@ export class CompanyService {
 				id: {
 					in: ids,
 				},
+			},
+			include: {
+				company: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
+			},
+			omit: {
+				companyId: true,
 			},
 		});
 
@@ -182,6 +221,18 @@ export class CompanyService {
 				companyId,
 				userId: targetUserId,
 				...dto,
+			},
+			include: {
+				user: {
+					select: {
+						id: true,
+						username: true,
+						avatar: true,
+					},
+				},
+			},
+			omit: {
+				userId: true,
 			},
 		});
 	}
@@ -267,6 +318,18 @@ export class CompanyService {
 				},
 			},
 			data: dto,
+			include: {
+				user: {
+					select: {
+						id: true,
+						username: true,
+						avatar: true,
+					},
+				},
+			},
+			omit: {
+				userId: true,
+			},
 		});
 	}
 
@@ -350,7 +413,7 @@ export class CompanyService {
 		user: User
 	): Promise<void> {
 		const company = await this.findById(companyId);
-		const currentUserMembership = company.users?.find((u) => u.userId === user.id);
+		const currentUserMembership = company.users?.find((u) => u.user.id === user.id);
 
 		if (currentUserMembership?.role !== CompanyRole.ADMIN && user.id !== targetUserId) {
 			throw new ForbiddenException('Access denied');
@@ -540,6 +603,18 @@ export class CompanyService {
 				orderBy: {
 					createdAt: 'desc',
 				},
+				include: {
+					author: {
+						select: {
+							id: true,
+							username: true,
+							avatar: true,
+						},
+					},
+				},
+				omit: {
+					authorId: true,
+				},
 			}),
 			this.prisma.review.count({ where }),
 		]);
@@ -562,6 +637,18 @@ export class CompanyService {
 				companyId,
 				authorId: user.id,
 			},
+			include: {
+				author: {
+					select: {
+						id: true,
+						username: true,
+						avatar: true,
+					},
+				},
+			},
+			omit: {
+				authorId: true,
+			},
 		});
 
 		await this.updateCompanyRating(companyId);
@@ -582,6 +669,18 @@ export class CompanyService {
 				},
 			},
 			data: dto,
+			include: {
+				author: {
+					select: {
+						id: true,
+						username: true,
+						avatar: true,
+					},
+				},
+			},
+			omit: {
+				authorId: true,
+			},
 		});
 
 		await this.updateCompanyRating(companyId);
@@ -624,7 +723,7 @@ export class CompanyService {
 
 	private async checkMembership(companyId: number, user: User): Promise<void> {
 		const company = await this.findById(companyId);
-		const membership = company.users?.find((u) => u.userId === user.id);
+		const membership = company.users?.find((u) => u.user.id === user.id);
 
 		if (!membership) {
 			throw new ForbiddenException('Access denied');

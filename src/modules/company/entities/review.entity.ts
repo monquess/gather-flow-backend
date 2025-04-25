@@ -1,4 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { UserEntity } from '@modules/user/entities/user.entity';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 
 export class ReviewEntity {
 	@ApiProperty({
@@ -8,10 +9,14 @@ export class ReviewEntity {
 	companyId: number;
 
 	@ApiProperty({
-		type: Number,
-		example: 1,
+		type: PickType(UserEntity, ['id', 'username', 'avatar']),
+		example: {
+			id: 1,
+			username: 'johndoe123',
+			avatar: 'https://s3.com/avatars/default.webp',
+		},
 	})
-	authorId: number;
+	author: Pick<UserEntity, 'id' | 'username' | 'avatar'>;
 
 	@ApiProperty({
 		type: Number,
