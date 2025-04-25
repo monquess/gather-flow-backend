@@ -25,6 +25,8 @@ import {
 	UpdateCompanyDto,
 	CreateCompanyMemberDto,
 	UpdateCompanyMemberRoleDto,
+	CreateReviewDto,
+	UpdateReviewDto,
 } from './dto';
 import { CompanyEntity } from './entities/company.entity';
 import { CompanyMemberEntity } from './entities/company-member.entity';
@@ -50,6 +52,10 @@ import {
 	ApiCompanyPostCreate,
 	ApiCompanyPostRemove,
 	ApiCompanyPostUpdate,
+	ApiCompanyReviewCreate,
+	ApiCompanyReviewRemove,
+	ApiCompanyReviewUpdate,
+	ApiCompanyFindReviews,
 } from './decorators/api-company.decorator';
 import { CompanyService } from './company.service';
 
@@ -57,6 +63,7 @@ import { EventEntity } from '@modules/event/entities/event.entity';
 import { PostEntity } from '@modules/post/entities/post.entity';
 import { CreatePostDto, UpdatePostDto, PostSortingOptionsDto } from '@modules/post/dto';
 import { EventSortingOptionsDto } from '@modules/event/dto';
+import { ReviewEntity } from './entities/review.entity';
 
 @UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
 @Controller('companies')
@@ -221,7 +228,7 @@ export class CompanyController {
 		@Query() sortingOptions: PostSortingOptionsDto,
 		@Query() paginationOptions: PaginationOptionsDto,
 		@CurrentUser() user: User
-	) {
+	): Promise<Paginated<PostEntity>> {
 		return this.companyService.findPosts(
 			companyId,
 			sortingOptions,
@@ -251,7 +258,7 @@ export class CompanyController {
 		@Body() dto: UpdatePostDto,
 		@CurrentUser() user: User,
 		@UploadedImage() poster?: Express.Multer.File
-	) {
+	): Promise<PostEntity> {
 		return this.companyService.updatePost(companyId, postId, dto, user, poster);
 	}
 
@@ -262,7 +269,47 @@ export class CompanyController {
 		@Param('companyId', ParseIntPipe) companyId: number,
 		@Param('postId', ParseIntPipe) postId: number,
 		@CurrentUser() user: User
-	) {
+	): Promise<void> {
 		return this.companyService.removePost(companyId, postId, user);
+	}
+
+	@ApiCompanyFindReviews()
+	@Public()
+	@Get(':companyId/reviews')
+	findReviews(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Query() paginationOptions: PaginationOptionsDto
+	): Promise<Paginated<ReviewEntity>> {
+		return this.companyService.findReviews(companyId, paginationOptions);
+	}
+
+	@ApiCompanyReviewCreate()
+	@Post(':companyId/reviews')
+	createReview(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Body() dto: CreateReviewDto,
+		@CurrentUser() user: User
+	): Promise<ReviewEntity> {
+		return this.companyService.createReview(companyId, dto, user);
+	}
+
+	@ApiCompanyReviewUpdate()
+	@Patch(':companyId/reviews')
+	createRating(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@Body() dto: UpdateReviewDto,
+		@CurrentUser() user: User
+	): Promise<ReviewEntity> {
+		return this.companyService.updateReview(companyId, dto, user);
+	}
+
+	@ApiCompanyReviewRemove()
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@Delete(':companyId/reviews')
+	removeReview(
+		@Param('companyId', ParseIntPipe) companyId: number,
+		@CurrentUser() user: User
+	): Promise<void> {
+		return this.companyService.removeReview(companyId, user);
 	}
 }

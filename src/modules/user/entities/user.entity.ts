@@ -25,12 +25,6 @@ export class UserEntity {
 	password: string | null;
 
 	@Exclude()
-	country?: string;
-
-	@Exclude()
-	timezone?: string;
-
-	@Exclude()
 	provider: Provider;
 
 	@ApiProperty({

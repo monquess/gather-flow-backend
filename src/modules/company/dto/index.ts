@@ -6,3 +6,5 @@ export * from './event-filtering-options.dto';
 export * from './update-company-member-role.dto';
 export * from './update-company.dto';
 export * from './update-event.dto';
+export * from './create-review.dto';
+export * from './update-review.dto';

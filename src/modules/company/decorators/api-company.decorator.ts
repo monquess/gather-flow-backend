@@ -16,6 +16,7 @@ import { EventEntity } from '@modules/event/entities/event.entity';
 import { CompanyEntity } from '../entities/company.entity';
 import { CompanyMemberEntity } from '../entities/company-member.entity';
 import { PostEntity } from '@modules/post/entities/post.entity';
+import { ReviewEntity } from '../entities/review.entity';
 
 export const ApiCompanyFindAll = () =>
 	applyDecorators(
@@ -320,5 +321,61 @@ export const ApiCompanyPostRemove = () =>
 		}),
 		ApiForbiddenResponse({
 			description: 'Access denied',
+		})
+	);
+
+export const ApiCompanyFindReviews = () =>
+	applyDecorators(
+		ApiOperation({ summary: 'Get paginated company reviews' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'Company id',
+		}),
+		ApiPaginatedResponse<ReviewEntity>(ReviewEntity)
+	);
+
+export const ApiCompanyReviewCreate = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Create company review' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'Company id',
+		}),
+		ApiCreatedResponse({
+			type: ReviewEntity,
+		}),
+		ApiNotFoundResponse({
+			description: 'Company not found',
+		})
+	);
+
+export const ApiCompanyReviewUpdate = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Update company review' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'Company id',
+		}),
+		ApiOkResponse({
+			type: ReviewEntity,
+		}),
+		ApiNotFoundResponse({
+			description: 'Review not found',
+		})
+	);
+
+export const ApiCompanyReviewRemove = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Delete company review' }),
+		ApiParam({
+			name: 'companyId',
+			description: 'Company id',
+		}),
+		ApiNoContentResponse(),
+		ApiNotFoundResponse({
+			description: 'Review not found',
 		})
 	);
