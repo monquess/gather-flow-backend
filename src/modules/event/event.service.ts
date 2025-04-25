@@ -170,11 +170,24 @@ export class EventService {
 				dto.quantity,
 				{
 					userId: user.id.toString(),
+					userEmail: user.email,
 					eventId: eventId.toString(),
 					companyId: event.companyId.toString(),
 					ticketIds: tickets.map((t) => t.id).join(','),
 				}
 			);
+
+			await prisma.payment.create({
+				data: {
+					userId: user.id,
+					transactionId: paymentIntent.id,
+					tickets: {
+						create: tickets.map((ticket) => ({
+							ticketId: ticket.id,
+						})),
+					},
+				},
+			});
 
 			return { clientSecret: paymentIntent.client_secret };
 		});

@@ -12,6 +12,8 @@ import { ConfigService } from '@nestjs/config';
 import { PaymentStatus, Prisma, User } from '@prisma/client';
 import Stripe from 'stripe';
 import { ConnectStripeResponseDto } from './dto/connect-stripe-response.dto';
+import { TicketService } from '@modules/ticket/ticket.service';
+import { MailService } from '@modules/mail/mail.service';
 
 @Injectable()
 export class StripeService {
@@ -20,8 +22,10 @@ export class StripeService {
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly configService: ConfigService<EnvironmentVariables, true>,
+		private readonly ticketService: TicketService,
 		@Inject(forwardRef(() => CompanyService))
-		private readonly companyService: CompanyService
+		private readonly companyService: CompanyService,
+		private readonly mailService: MailService
 	) {
 		this.stripe = new Stripe(
 			this.configService.get<string>('STRIPE_SECRET_KEY')
@@ -124,6 +128,14 @@ export class StripeService {
 	async handleCheckoutCompleted(
 		paymentIntent: Stripe.PaymentIntent
 	): Promise<void> {
+		const ticketIds = paymentIntent.metadata.ticketIds?.split(',').map(Number);
+
+		const ticketPdfs = await Promise.all(
+			ticketIds.map((ticketId) =>
+				this.ticketService.generateTicketPdf(ticketId)
+			)
+		);
+
 		await this.prisma.payment.updateMany({
 			where: {
 				transactionId: paymentIntent.id,
@@ -131,6 +143,13 @@ export class StripeService {
 			data: {
 				status: PaymentStatus.COMPLETED,
 			},
+		});
+
+		await this.mailService.sendMail({
+			to: paymentIntent.metadata.userEmail,
+			subject: 'Your Tickets for the Event',
+			templateName: 'event-ticket',
+			attachments: ticketPdfs,
 		});
 	}
 

@@ -121,7 +121,7 @@ model PaymentTicket {
 
 model Promocode {
   id             Int      @id @default(autoincrement())
-  code           String   @unique @db.VarChar(255)
+  code           String   @db.VarChar(255)
   discount       Int
   event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   eventId        Int      @map("event_id")
@@ -131,6 +131,7 @@ model Promocode {
 
   tickets Ticket[]
 
+  @@unique([code, eventId])
   @@map("promocodes")
 }
 
