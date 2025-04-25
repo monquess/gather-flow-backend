@@ -6,7 +6,6 @@ import {
 	Param,
 	ParseIntPipe,
 	Post,
-	Post,
 	Query,
 	UseInterceptors,
 } from '@nestjs/common';
@@ -17,7 +16,7 @@ import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Paginated, PaginationOptionsDto } from '@common/pagination';
 import { Environment } from '@common/decorators/environment.decorator';
 import { NodeEnv } from '@common/enum/node-env.enum';
-import { CacheInterceptor } from '@common/interceptors/cache.interceptor.ts.interceptor';
+import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 import { CommentEntity } from '@modules/comment/entities/comment.entity';
 import { CreateCommentDto } from '@modules/comment/dto';
 

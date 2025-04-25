@@ -15,6 +15,8 @@ import {
 	CompanyEventFilteringOptionsDto,
 	CreateEventDto,
 	UpdateEventDto,
+	CreateReviewDto,
+	UpdateReviewDto,
 } from './dto';
 
 import { CompanyMemberEntity } from './entities/company-member.entity';
@@ -35,6 +37,7 @@ import { CreatePostDto, UpdatePostDto, PostSortingOptionsDto } from '@modules/po
 import { PostEntity } from '@modules/post/entities/post.entity';
 import { SortFields } from '@modules/post/enum/sort-fields.enum';
 import { PostService } from '@modules/post/post.service';
+import { ReviewEntity } from './entities/review.entity';
 
 @Injectable()
 export class CompanyService {
@@ -51,12 +54,23 @@ export class CompanyService {
 	) {}
 
 	async findById(id: number): Promise<CompanyEntity> {
-		return this.prisma.company.findUniqueOrThrow({
+		const { _count, rating, ...company } = await this.prisma.company.findUniqueOrThrow({
 			where: { id },
 			include: {
 				users: true,
+				_count: {
+					select: {
+						reviews: true,
+					},
+				},
 			},
 		});
+
+		return {
+			...company,
+			rating: rating.toNumber(),
+			reviews: _count.reviews,
+		};
 	}
 
 	async findAll(
@@ -76,17 +90,26 @@ export class CompanyService {
 				take: limit,
 				skip: limit * (page - 1),
 				orderBy: {
-					createdAt: 'asc',
+					createdAt: 'desc',
 				},
 				include: {
 					users: true,
+					_count: {
+						select: {
+							reviews: true,
+						},
+					},
 				},
 			}),
 			this.prisma.company.count({ where }),
 		]);
 
 		return {
-			data: companies,
+			data: companies.map(({ _count, rating, ...company }) => ({
+				...company,
+				rating: rating.toNumber(),
+				reviews: _count.reviews,
+			})),
 			meta: getPaginationMeta(count, page, limit),
 		};
 	}
@@ -128,7 +151,7 @@ export class CompanyService {
 	}
 
 	async create(dto: CreateCompanyDto, user: User): Promise<CompanyEntity> {
-		return this.prisma.company.create({
+		const { rating, ...company } = await this.prisma.company.create({
 			data: {
 				...dto,
 				users: {
@@ -139,12 +162,18 @@ export class CompanyService {
 				},
 			},
 		});
+
+		return {
+			...company,
+			rating: rating.toNumber(),
+			reviews: 0,
+		};
 	}
 
 	async createCompanyMember(
 		companyId: number,
 		targetUserId: number,
-		{ role }: CreateCompanyMemberDto,
+		dto: CreateCompanyMemberDto,
 		user: User
 	): Promise<CompanyMemberEntity> {
 		await this.checkMembership(companyId, user);
@@ -152,7 +181,7 @@ export class CompanyService {
 			data: {
 				companyId,
 				userId: targetUserId,
-				role,
+				...dto,
 			},
 		});
 	}
@@ -202,18 +231,31 @@ export class CompanyService {
 
 	async update(id: number, dto: UpdateCompanyDto, user: User): Promise<CompanyEntity> {
 		await this.checkMembership(id, user);
-		return this.prisma.company.update({
+		const { _count, rating, ...company } = await this.prisma.company.update({
 			where: {
 				id,
 			},
 			data: dto,
+			include: {
+				_count: {
+					select: {
+						reviews: true,
+					},
+				},
+			},
 		});
+
+		return {
+			...company,
+			rating: rating.toNumber(),
+			reviews: _count.reviews,
+		};
 	}
 
 	async updateCompanyMemberRole(
 		companyId: number,
 		targetUserId: number,
-		{ role }: UpdateCompanyMemberRoleDto,
+		dto: UpdateCompanyMemberRoleDto,
 		user: User
 	): Promise<CompanyMemberEntity> {
 		await this.checkMembership(companyId, user);
@@ -224,9 +266,7 @@ export class CompanyService {
 					companyId,
 				},
 			},
-			data: {
-				role,
-			},
+			data: dto,
 		});
 	}
 
@@ -359,12 +399,11 @@ export class CompanyService {
 		{ page, limit }: PaginationOptionsDto,
 		user?: User
 	): Promise<Paginated<PostEntity>> {
+		// prettier-ignore
+		const orderBy =	sort === SortFields.LIKES ? { likes: { _count: order } } : { [sort]: order };
 		const where: Prisma.PostWhereInput = {
 			companyId,
 		};
-
-		// prettier-ignore
-		const orderBy =	sort === SortFields.LIKES ? { likes: { _count: order } } : { [sort]: order };
 
 		const [posts, count] = await this.prisma.$transaction([
 			this.prisma.post.findMany({
@@ -482,6 +521,103 @@ export class CompanyService {
 		await this.prisma.post.delete({
 			where: {
 				id: postId,
+			},
+		});
+	}
+
+	async findReviews(
+		companyId: number,
+		{ page, limit }: PaginationOptionsDto
+	): Promise<Paginated<ReviewEntity>> {
+		const where: Prisma.ReviewWhereInput = {
+			companyId,
+		};
+		const [reviews, count] = await this.prisma.$transaction([
+			this.prisma.review.findMany({
+				where,
+				take: limit,
+				skip: (page - 1) * limit,
+				orderBy: {
+					createdAt: 'desc',
+				},
+			}),
+			this.prisma.review.count({ where }),
+		]);
+
+		return {
+			data: reviews,
+			meta: getPaginationMeta(count, page, limit),
+		};
+	}
+
+	async createReview(
+		companyId: number,
+		dto: CreateReviewDto,
+		user: User
+	): Promise<ReviewEntity> {
+		await this.findById(companyId);
+		const review = await this.prisma.review.create({
+			data: {
+				...dto,
+				companyId,
+				authorId: user.id,
+			},
+		});
+
+		await this.updateCompanyRating(companyId);
+
+		return review;
+	}
+
+	async updateReview(
+		companyId: number,
+		dto: UpdateReviewDto,
+		user: User
+	): Promise<ReviewEntity> {
+		const review = await this.prisma.review.update({
+			where: {
+				authorId_companyId: {
+					authorId: user.id,
+					companyId,
+				},
+			},
+			data: dto,
+		});
+
+		await this.updateCompanyRating(companyId);
+
+		return review;
+	}
+
+	async removeReview(companyId: number, user: User): Promise<void> {
+		await this.prisma.review.delete({
+			where: {
+				authorId_companyId: {
+					authorId: user.id,
+					companyId: companyId,
+				},
+			},
+		});
+
+		await this.updateCompanyRating(companyId);
+	}
+
+	private async updateCompanyRating(companyId: number): Promise<void> {
+		const { _avg } = await this.prisma.review.aggregate({
+			where: {
+				companyId,
+			},
+			_avg: {
+				stars: true,
+			},
+		});
+
+		await this.prisma.company.update({
+			where: {
+				id: companyId,
+			},
+			data: {
+				rating: Math.round((_avg.stars ?? 0) * 10) / 10,
 			},
 		});
 	}

@@ -9,10 +9,10 @@ import {
 	ApiNoContentResponse,
 } from '@nestjs/swagger';
 import { ApiAuth } from '@common/decorators/swagger/api-auth.decorator';
+import { ApiPaginatedResponse } from '@common/pagination';
 
 import { UpdateCommentDto } from '../dto';
 import { CommentEntity } from '../entities/comment.entity';
-import { ApiPaginatedResponse } from '@common/pagination/api-paginated-response';
 
 export const ApiCommentFindById = () =>
 	applyDecorators(

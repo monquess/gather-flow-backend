@@ -22,6 +22,7 @@ model User {
   companies CompanyMember[]
   comments  Comment[]
   likes     Like[]
+  reviews   Review[]
 
   @@map("users")
 }
@@ -32,11 +33,13 @@ model Company {
   description String?
   email       String   @unique @db.VarChar(255)
   location    String   @db.VarChar(255)
+  rating      Decimal  @default(0.0) @db.Decimal(2, 1)
   createdAt   DateTime @default(now()) @map("created_at")
 
-  users  CompanyMember[]
-  events Event[]
-  posts  Post[]
+  users   CompanyMember[]
+  events  Event[]
+  posts   Post[]
+  reviews Review[]
 
   @@map("companies")
 }
@@ -120,6 +123,21 @@ model Comment {
   replies Comment[] @relation("ParentComment")
 
   @@map("comments")
+}
+
+model Review {
+  author    User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  Int     @map("author_id")
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int     @map("company_id")
+  stars     Int     @db.SmallInt
+  comment   String? @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@id([authorId, companyId])
+  @@map("reviews")
 }
 
 enum Provider {
