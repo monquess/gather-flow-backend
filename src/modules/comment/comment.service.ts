@@ -16,6 +16,23 @@ export class CommentService {
 			where: {
 				id,
 			},
+			include: {
+				author: {
+					select: {
+						id: true,
+						username: true,
+						avatar: true,
+					},
+				},
+				_count: {
+					select: {
+						replies: true,
+					},
+				},
+			},
+			omit: {
+				authorId: true,
+			},
 		});
 	}
 
@@ -31,15 +48,25 @@ export class CommentService {
 		const [replies, count] = await this.prisma.$transaction([
 			this.prisma.comment.findMany({
 				where,
-				skip: (page - 1) * limit,
-				take: limit,
 				include: {
+					author: {
+						select: {
+							id: true,
+							username: true,
+							avatar: true,
+						},
+					},
 					_count: {
 						select: {
 							replies: true,
 						},
 					},
 				},
+				omit: {
+					authorId: true,
+				},
+				skip: (page - 1) * limit,
+				take: limit,
 			}),
 			this.prisma.comment.count({ where }),
 		]);
@@ -53,36 +80,44 @@ export class CommentService {
 		};
 	}
 
-	async update(
-		id: number,
-		dto: UpdateCommentDto,
-		user: User
-	): Promise<CommentEntity> {
-		const comment = await this.findById(id);
-
-		if (comment.authorId !== user.id) {
-			throw new ForbiddenException('Access denied');
-		}
+	async update(id: number, dto: UpdateCommentDto, user: User): Promise<CommentEntity> {
+		await this.checkCommentOwnership(id, user);
 
 		return this.prisma.comment.update({
 			where: {
 				id,
 			},
 			data: dto,
+			include: {
+				author: {
+					select: {
+						id: true,
+						username: true,
+						avatar: true,
+					},
+				},
+			},
+			omit: {
+				authorId: true,
+			},
 		});
 	}
 
 	async remove(id: number, user: User): Promise<void> {
-		const comment = await this.findById(id);
-
-		if (comment.authorId !== user.id) {
-			throw new ForbiddenException('Access denied');
-		}
+		await this.checkCommentOwnership(id, user);
 
 		await this.prisma.comment.delete({
 			where: {
 				id,
 			},
 		});
+	}
+
+	private async checkCommentOwnership(id: number, user: User): Promise<void> {
+		const comment = await this.findById(id);
+
+		if (comment.author.id !== user.id) {
+			throw new ForbiddenException('Access denied');
+		}
 	}
 }

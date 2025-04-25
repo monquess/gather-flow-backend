@@ -53,7 +53,7 @@ export class EventEntity {
 
 	@ApiProperty({
 		example: 19.25,
-		type: Prisma.Decimal,
+		type: Number,
 	})
 	ticketPrice: Prisma.Decimal;
 

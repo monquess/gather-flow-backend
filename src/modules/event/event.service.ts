@@ -128,11 +128,21 @@ export class EventService {
 				skip: (page - 1) * limit,
 				take: limit,
 				include: {
+					author: {
+						select: {
+							id: true,
+							username: true,
+							avatar: true,
+						},
+					},
 					_count: {
 						select: {
 							replies: true,
 						},
 					},
+				},
+				omit: {
+					authorId: true,
 				},
 			}),
 			this.prisma.comment.count({ where }),
@@ -158,6 +168,18 @@ export class EventService {
 				...dto,
 				eventId,
 				authorId: user.id,
+			},
+			include: {
+				author: {
+					select: {
+						id: true,
+						username: true,
+						avatar: true,
+					},
+				},
+			},
+			omit: {
+				authorId: true,
 			},
 		});
 	}

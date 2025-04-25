@@ -204,8 +204,6 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 			return { match_all: {} };
 		}
 
-		console.log('must', must[0]);
-
 		return {
 			bool: {
 				must,
