@@ -65,7 +65,7 @@ import { CreatePostDto, UpdatePostDto, PostSortingOptionsDto } from '@modules/po
 import { EventSortingOptionsDto } from '@modules/event/dto';
 import { ReviewEntity } from './entities/review.entity';
 
-@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
+@UseInterceptors(CacheInterceptor, ClassSerializerInterceptor)
 @Controller('companies')
 export class CompanyController {
 	constructor(private readonly companyService: CompanyService) {}

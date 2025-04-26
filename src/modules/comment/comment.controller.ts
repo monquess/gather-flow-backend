@@ -30,7 +30,7 @@ import { Paginated } from '@common/pagination/paginated';
 import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
 import { Public } from '@common/decorators/public.decorator';
 
-@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
+@UseInterceptors(CacheInterceptor, ClassSerializerInterceptor)
 @Controller('comments')
 export class CommentController {
 	constructor(private readonly commentService: CommentService) {}

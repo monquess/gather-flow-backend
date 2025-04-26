@@ -35,7 +35,7 @@ import {
 import { EventEntity } from './entities/event.entity';
 import { EventService } from './event.service';
 
-@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
+@UseInterceptors(CacheInterceptor, ClassSerializerInterceptor)
 @Controller('events')
 export class EventController {
 	constructor(private readonly eventService: EventService) {}

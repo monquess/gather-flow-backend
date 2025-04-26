@@ -28,7 +28,7 @@ import {
 } from './decorators/api-post.decorator';
 import { PostSortingOptionsDto } from './dto';
 
-@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
+@UseInterceptors(CacheInterceptor, ClassSerializerInterceptor)
 @SerializeOptions({ type: PostEntity })
 @Controller('posts')
 export class PostController {

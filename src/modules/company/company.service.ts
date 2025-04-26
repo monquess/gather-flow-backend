@@ -154,7 +154,7 @@ export class CompanyService {
 
 		const status = role === CompanyRole.ADMIN ? options.status : EventStatus.PUBLISHED;
 		const [events, count] = await this.eventSearchService.search(
-			{ ...options, status },
+			{ ...options, status, companyId },
 			sort,
 			order,
 			page,
@@ -182,9 +182,9 @@ export class CompanyService {
 		});
 
 		return {
-			data: ids
-				.map((id) => result.find((e) => e.id === id))
-				.filter((e) => e !== undefined),
+			data: ids.map((id) => {
+				return new EventEntity(result.find((e) => e.id === id)!);
+			}),
 			meta: getPaginationMeta(count, page, limit),
 		};
 	}
@@ -277,7 +277,7 @@ export class CompanyService {
 			return newEvent;
 		});
 
-		return event;
+		return new EventEntity(event);
 	}
 
 	async update(id: number, dto: UpdateCompanyDto, user: User): Promise<CompanyEntity> {
@@ -395,7 +395,7 @@ export class CompanyService {
 			return newEvent;
 		});
 
-		return updatedEvent;
+		return new EventEntity(updatedEvent);
 	}
 
 	async remove(id: number, user: User): Promise<void> {

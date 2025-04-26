@@ -1,6 +1,7 @@
-import { CompanyEntity } from '@modules/company/entities/company.entity';
+import { Transform } from 'class-transformer';
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { Format, Prisma, Theme, VisitorsVisibility } from '@prisma/client';
+import { Prisma, Format, Theme, VisitorsVisibility } from '@prisma/client';
+import { CompanyEntity } from '@modules/company/entities/company.entity';
 
 export class EventEntity {
 	@ApiProperty({
@@ -54,6 +55,12 @@ export class EventEntity {
 	@ApiProperty({
 		example: 19.25,
 		type: Number,
+	})
+	@Transform(({ value }: { value: unknown }) => {
+		if (typeof value === 'string') {
+			return parseFloat(value);
+		}
+		return value instanceof Prisma.Decimal ? value.toNumber() : value;
 	})
 	ticketPrice: Prisma.Decimal;
 
