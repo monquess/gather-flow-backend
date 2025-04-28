@@ -23,18 +23,21 @@ model User {
   comments  Comment[]
   likes     Like[]
   reviews   Review[]
+  tickets   Ticket[]
+  payments  Payment[]
 
   @@map("users")
 }
 
 model Company {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(255)
-  description String?
-  email       String   @unique @db.VarChar(255)
-  location    String   @db.VarChar(255)
-  rating      Decimal  @default(0.0) @db.Decimal(2, 1)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id              Int      @id @default(autoincrement())
+  name            String   @db.VarChar(255)
+  description     String?
+  email           String   @unique @db.VarChar(255)
+  location        String   @db.VarChar(255)
+  rating          Decimal  @default(0.0) @db.Decimal(2, 1)
+  stripeAccountId String?  @map("stripe_account_id")
+  createdAt       DateTime @default(now()) @map("created_at")
 
   users   CompanyMember[]
   events  Event[]
@@ -94,6 +97,7 @@ model Event {
   location           String             @db.VarChar(255)
   ticketPrice        Decimal            @map("ticket_price") @db.Decimal(10, 2)
   ticketsQuantity    Int                @map("tickets_quantity")
+  ticketsSold        Int                @default(0) @map("tickets_sold")
   poster             String
   startDate          DateTime           @map("start_date")
   endDate            DateTime?          @map("end_date")
@@ -104,7 +108,67 @@ model Event {
 
   comments Comment[]
 
+  tickets    Ticket[]
+  promocodes Promocode[]
+
   @@map("events")
+}
+
+model Ticket {
+  id           Int        @id @default(autoincrement())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int        @map("user_id")
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId      Int        @map("event_id")
+  purchaseDate DateTime   @map("purchase_date")
+  ticketCode   String     @map("ticket_code") @db.VarChar(255)
+  promocode    Promocode? @relation(fields: [promocodeId], references: [id], onDelete: SetNull)
+  promocodeId  Int?       @map("promocode_id")
+  finalPrice   Decimal    @map("final_price") @db.Decimal(10, 2)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  payments PaymentTicket[]
+
+  @@map("tickets")
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int           @map("user_id")
+  status        PaymentStatus @default(PENDING)
+  transactionId String        @map("transaction_id") @db.VarChar(255)
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  tickets PaymentTicket[]
+
+  @@map("payments")
+}
+
+model PaymentTicket {
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  paymentId Int     @map("payment_id")
+  ticket    Ticket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticketId  Int     @map("ticket_id")
+
+  @@id([paymentId, ticketId])
+  @@map("payment_tickets")
+}
+
+model Promocode {
+  id             Int      @id @default(autoincrement())
+  code           String   @db.VarChar(255)
+  discount       Int
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId        Int      @map("event_id")
+  isActive       Boolean  @default(true) @map("is_active")
+  expirationDate DateTime @map("expiration_date")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  tickets Ticket[]
+
+  @@unique([code, eventId])
+  @@map("promocodes")
 }
 
 model Comment {
@@ -173,4 +237,10 @@ enum VisitorsVisibility {
 enum EventStatus {
   DRAFT
   PUBLISHED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }

@@ -33,6 +33,12 @@ export class CompanyEntity {
 	location: string;
 
 	@ApiProperty({
+		example: 'acct_1RH07qEsghv2SxON',
+		type: String,
+	})
+	stripeAccountId?: string | null;
+
+	@ApiProperty({
 		example: '2025-03-09T16:17:53.019Z',
 		type: String,
 	})

@@ -8,8 +8,8 @@ import {
 	IsNotEmpty,
 	IsNumber,
 	IsOptional,
+	IsPositive,
 	IsString,
-	Min,
 } from 'class-validator';
 
 export class EventFilteringOptionsDto {
@@ -57,8 +57,8 @@ export class EventFilteringOptionsDto {
 		required: false,
 	})
 	@IsOptional()
+	@IsPositive()
 	@IsNumber({ maxDecimalPlaces: 2 })
-	@Min(0)
 	@Type(() => Number)
 	readonly minPrice?: number;
 
@@ -69,7 +69,7 @@ export class EventFilteringOptionsDto {
 	})
 	@IsOptional()
 	@IsNumber({ maxDecimalPlaces: 2 })
-	@Min(0)
+	@IsPositive()
 	@Type(() => Number)
 	readonly maxPrice?: number;
 

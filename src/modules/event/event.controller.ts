@@ -5,12 +5,12 @@ import {
 	Get,
 	Param,
 	ParseIntPipe,
+	Patch,
 	Post,
 	Query,
 	UseInterceptors,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
-
 import { Public } from '@common/decorators/public.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Paginated, PaginationOptionsDto } from '@common/pagination';
@@ -19,14 +19,22 @@ import { NodeEnv } from '@common/enum/node-env.enum';
 import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 import { CommentEntity } from '@modules/comment/entities/comment.entity';
 import { CreateCommentDto } from '@modules/comment/dto';
-
 import {
+	ApiEventCreatePromocode,
+	ApiEventCreateTicket,
 	ApiEventCreateComment,
 	ApiEventFindAll,
 	ApiEventFindById,
+	ApiEventFindPromocodes,
+	ApiEventUpdatePromocode,
 	ApiEventFindComments,
 	ApiEventFindSimilar,
 } from './decorators/api-event.decorator';
+import { CreateTicketDto } from './dto/create-ticket.dto';
+import { CreateEventTicketResponseDto } from './dto/create-event-ticket-response.dto';
+import { CreatePromocodeDto } from './dto/create-promocode.dto';
+import { PromocodeEntity } from './entities/promocode.entity';
+import { UpdatePromocodeDto } from './dto/update-promocode.dto';
 import {
 	EventFilteringOptionsDto,
 	EventSortingOptionsDto,
@@ -47,11 +55,56 @@ export class EventController {
 		return this.eventService.index();
 	}
 
+	@ApiEventFindPromocodes()
+	@Get(':id/promocodes')
+	findEventPromocodes(
+		@Param('id', ParseIntPipe) id: number,
+		@CurrentUser() user: User
+	): Promise<PromocodeEntity[]> {
+		return this.eventService.findEventPromocodes(id, user);
+	}
+
 	@ApiEventFindById()
 	@Public()
 	@Get(':id')
 	findById(@Param('id', ParseIntPipe) id: number): Promise<EventEntity> {
 		return this.eventService.findById(id);
+	}
+
+	@ApiEventCreateTicket()
+	@Post(':id/tickets')
+	createEventTicket(
+		@Param('id', ParseIntPipe) id: number,
+		@Body() createTicketDto: CreateTicketDto,
+		@CurrentUser() user: User
+	): Promise<CreateEventTicketResponseDto> {
+		return this.eventService.createEventTicket(id, createTicketDto, user);
+	}
+
+	@ApiEventCreatePromocode()
+	@Post(':id/promocodes')
+	createEventPromocode(
+		@Param('id', ParseIntPipe) id: number,
+		@Body() createPromocodeDto: CreatePromocodeDto,
+		@CurrentUser() user: User
+	): Promise<PromocodeEntity> {
+		return this.eventService.createEventPromocode(id, createPromocodeDto, user);
+	}
+
+	@ApiEventUpdatePromocode()
+	@Patch(':eventId/promocodes/:promocodeId')
+	updateEventPromocode(
+		@Param('eventId', ParseIntPipe) eventId: number,
+		@Param('promocodeId', ParseIntPipe) promocodeId: number,
+		@Body() updatePromocodeDto: UpdatePromocodeDto,
+		@CurrentUser() user: User
+	): Promise<PromocodeEntity> {
+		return this.eventService.updateEventPromocode(
+			eventId,
+			promocodeId,
+			updatePromocodeDto,
+			user
+		);
 	}
 
 	@ApiEventFindAll()

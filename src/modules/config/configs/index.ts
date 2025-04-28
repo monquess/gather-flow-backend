@@ -5,3 +5,4 @@ export * from './mail.config';
 export * from './redis.config';
 export * from './storage.config';
 export * from './elasticsearch.config';
+export * from './stripe.config';

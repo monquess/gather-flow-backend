@@ -64,6 +64,12 @@ export class EventEntity {
 	ticketsQuantity: number;
 
 	@ApiProperty({
+		example: 100,
+		type: Number,
+	})
+	ticketsSold: number;
+
+	@ApiProperty({
 		example: 'https://s3.com/posters/default.webp',
 		type: String,
 	})

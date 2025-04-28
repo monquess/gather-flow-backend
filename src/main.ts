@@ -13,7 +13,9 @@ import { validationExceptionFactory } from '@common/pipes/validation/validation-
 import { AppModule } from '@modules/app.module';
 
 async function bootstrap() {
-	const app = await NestFactory.create<NestExpressApplication>(AppModule);
+	const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+		rawBody: true,
+	});
 	const prefix = 'api';
 
 	app.set('trust proxy', true);

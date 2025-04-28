@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bullmq';
-
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PrismaModule } from './prisma/prisma.module';
@@ -12,6 +11,8 @@ import { NotificationModule } from './notification/notification.module';
 import { MailModule } from './mail/mail.module';
 import { CompanyModule } from './company/company.module';
 import { EventModule } from './event/event.module';
+import { TicketModule } from './ticket/ticket.module';
+import { PaymentModule } from './payment/payment.module';
 import { CommentModule } from './comment/comment.module';
 import { ConfigModule } from './config/config.module';
 import {
@@ -52,6 +53,8 @@ import { PostModule } from './post/post.module';
 		NotificationModule,
 		CompanyModule,
 		EventModule,
+		TicketModule,
+		PaymentModule,
 		SearchModule,
 		CommentModule,
 		PostModule,

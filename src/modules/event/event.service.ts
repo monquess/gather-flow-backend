@@ -1,20 +1,38 @@
-import { Injectable } from '@nestjs/common';
+import {
+	BadRequestException,
+	forwardRef,
+	Inject,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
 import { Prisma, User, EventStatus } from '@prisma/client';
-
-import { PaginationOptionsDto, Paginated, getPaginationMeta } from '@common/pagination';
 import { PrismaService } from '@modules/prisma/prisma.service';
-import { CommentEntity } from '@modules/comment/entities/comment.entity';
-import { CreateCommentDto } from '@modules/comment/dto';
-import { EventSearchService } from '@modules/search/event-search.service';
-
 import { EventEntity } from './entities/event.entity';
 import { EventFilteringOptionsDto } from './dto/filtering-options.dto';
 import { EventSortingOptionsDto } from './dto';
+import { CreateTicketDto } from './dto/create-ticket.dto';
+import { StripeService } from '@modules/payment/stripe.service';
+import { TicketService } from '@modules/ticket/ticket.service';
+import { CreateEventTicketResponseDto } from './dto/create-event-ticket-response.dto';
+import { CreatePromocodeDto } from './dto/create-promocode.dto';
+import { CompanyService } from '@modules/company/company.service';
+import { PromocodeEntity } from './entities/promocode.entity';
+import { UpdatePromocodeDto } from './dto/update-promocode.dto';
+import { EventSearchService } from '@modules/search/event-search.service';
+import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
+import { Paginated } from '@common/pagination/paginated';
+import { getPaginationMeta } from '@common/pagination/paginated-metadata';
+import { CreateCommentDto } from '@modules/comment/dto';
+import { CommentEntity } from '@modules/comment/entities/comment.entity';
 
 @Injectable()
 export class EventService {
 	constructor(
 		private readonly prisma: PrismaService,
+		private readonly stripeService: StripeService,
+		private readonly ticketService: TicketService,
+		@Inject(forwardRef(() => CompanyService))
+		private readonly companyService: CompanyService,
 		private readonly searchService: EventSearchService
 	) {}
 
@@ -182,5 +200,142 @@ export class EventService {
 				authorId: true,
 			},
 		});
+	}
+
+	async createEventPromocode(
+		eventId: number,
+		dto: CreatePromocodeDto,
+		user: User
+	): Promise<PromocodeEntity> {
+		const event = await this.findById(eventId);
+		await this.companyService.checkIsCompanyAdmin(user.id, event.company?.id);
+
+		return this.prisma.promocode.create({
+			data: {
+				...dto,
+				eventId,
+			},
+		});
+	}
+
+	async updateEventPromocode(
+		eventId: number,
+		promocodeId: number,
+		dto: UpdatePromocodeDto,
+		user: User
+	): Promise<PromocodeEntity> {
+		const event = await this.findById(eventId);
+		await this.companyService.checkIsCompanyAdmin(user.id, event.company?.id);
+
+		return this.prisma.promocode.update({
+			where: {
+				id: promocodeId,
+			},
+			data: {
+				...dto,
+				eventId,
+			},
+		});
+	}
+
+	async findEventPromocodes(eventId: number, user: User): Promise<PromocodeEntity[]> {
+		const event = await this.findById(eventId);
+		await this.companyService.checkIsCompanyAdmin(user.id, event.company?.id);
+
+		return this.prisma.promocode.findMany({
+			where: { eventId },
+		});
+	}
+
+	async createEventTicket(
+		eventId: number,
+		dto: CreateTicketDto,
+		user: User
+	): Promise<CreateEventTicketResponseDto> {
+		const event = await this.findById(eventId);
+		const availableTickets = event.ticketsQuantity - event.ticketsSold;
+
+		if (dto.quantity > availableTickets) {
+			throw new BadRequestException(`Only ${availableTickets} tickets remaining`);
+		}
+
+		let discount = 0;
+		let promocodeId: number | null = null;
+
+		if (dto.promocode) {
+			const promocode = await this.prisma.promocode.findFirstOrThrow({
+				where: {
+					code: dto.promocode,
+					eventId,
+					isActive: true,
+				},
+			});
+
+			discount = promocode.discount;
+			promocodeId = promocode.id;
+		}
+
+		const result = await this.prisma.$transaction(async (prisma) => {
+			const tickets = await Promise.all(
+				Array(dto.quantity)
+					.fill(null)
+					.map(() =>
+						prisma.ticket.create({
+							data: {
+								userId: user.id,
+								eventId,
+								ticketCode: this.ticketService.generateTicketCode(),
+								finalPrice: event.ticketPrice.mul(100 - discount).div(100),
+								purchaseDate: new Date(),
+								promocodeId,
+							},
+						})
+					)
+			);
+
+			await prisma.event.update({
+				where: {
+					id: eventId,
+				},
+				data: {
+					ticketsSold: {
+						increment: dto.quantity,
+					},
+				},
+			});
+
+			if (!event.company) {
+				throw new NotFoundException('Company not found');
+			}
+
+			const paymentIntent = await this.stripeService.createPaymentIntent(
+				event.title,
+				event.ticketPrice.mul(100 - discount).div(100),
+				dto.quantity,
+				{
+					userId: user.id.toString(),
+					userEmail: user.email,
+					eventId: eventId.toString(),
+					companyId: event.company.id.toString(),
+					ticketIds: tickets.map((t) => t.id).join(','),
+				}
+			);
+
+			await prisma.payment.create({
+				data: {
+					userId: user.id,
+					transactionId: paymentIntent.id,
+					tickets: {
+						create: tickets.map((ticket) => ({
+							ticketId: ticket.id,
+						})),
+					},
+				},
+			});
+
+			return { clientSecret: paymentIntent.client_secret };
+		});
+
+		return result;
 	}
 }

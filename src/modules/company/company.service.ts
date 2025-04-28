@@ -1,10 +1,14 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+	ForbiddenException,
+	forwardRef,
+	Inject,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { CompanyRole, EventStatus, Prisma, User } from '@prisma/client';
-
 import { Job, Queue } from 'bullmq';
-
 import { PaginationOptionsDto, Paginated, getPaginationMeta } from '@common/pagination';
 import {
 	CreateCompanyDto,
@@ -18,21 +22,17 @@ import {
 	CreateReviewDto,
 	UpdateReviewDto,
 } from './dto';
-
 import { CompanyMemberEntity } from './entities/company-member.entity';
 import { CompanyEntity } from './entities/company.entity';
 import { PublishEventJobData } from './interfaces/publish-event-job-data.interface';
-
 import { AppConfig, appConfig } from '@modules/config/configs';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { StoragePath } from '@modules/s3/enum/storage-path.enum';
 import { S3Service } from '@modules/s3/s3.service';
-
 import { EventSortingOptionsDto } from '@modules/event/dto';
 import { EventEntity } from '@modules/event/entities/event.entity';
 import { EventService } from '@modules/event/event.service';
 import { EventSearchService } from '@modules/search/event-search.service';
-
 import { CreatePostDto, UpdatePostDto, PostSortingOptionsDto } from '@modules/post/dto';
 import { PostEntity } from '@modules/post/entities/post.entity';
 import { SortFields } from '@modules/post/enum/sort-fields.enum';
@@ -47,6 +47,7 @@ export class CompanyService {
 		private readonly prisma: PrismaService,
 		private readonly s3Service: S3Service,
 		private readonly postService: PostService,
+		@Inject(forwardRef(() => EventService))
 		private readonly eventService: EventService,
 		private readonly eventSearchService: EventSearchService,
 		@InjectQueue('publishEvent')
@@ -215,7 +216,8 @@ export class CompanyService {
 		dto: CreateCompanyMemberDto,
 		user: User
 	): Promise<CompanyMemberEntity> {
-		await this.checkMembership(companyId, user);
+		await this.checkIsCompanyAdmin(user.id, companyId);
+
 		return this.prisma.companyMember.create({
 			data: {
 				companyId,
@@ -243,7 +245,7 @@ export class CompanyService {
 		user: User,
 		poster?: Express.Multer.File
 	): Promise<EventEntity> {
-		await this.checkMembership(companyId, user);
+		await this.checkIsCompanyAdmin(user.id, companyId);
 
 		let posterUrl = this.config.defaults.poster;
 		if (poster) {
@@ -281,12 +283,13 @@ export class CompanyService {
 	}
 
 	async update(id: number, dto: UpdateCompanyDto, user: User): Promise<CompanyEntity> {
-		await this.checkMembership(id, user);
+		await this.checkIsCompanyAdmin(user.id, id);
+
 		const { _count, rating, ...company } = await this.prisma.company.update({
+			data: dto,
 			where: {
 				id,
 			},
-			data: dto,
 			include: {
 				_count: {
 					select: {
@@ -309,7 +312,8 @@ export class CompanyService {
 		dto: UpdateCompanyMemberRoleDto,
 		user: User
 	): Promise<CompanyMemberEntity> {
-		await this.checkMembership(companyId, user);
+		await this.checkIsCompanyAdmin(user.id, companyId);
+
 		return this.prisma.companyMember.update({
 			where: {
 				userId_companyId: {
@@ -340,11 +344,10 @@ export class CompanyService {
 		user: User,
 		poster?: Express.Multer.File
 	): Promise<EventEntity> {
+		await this.checkIsCompanyAdmin(user.id, companyId);
 		const event = await this.eventService.findById(eventId);
-
-		await this.checkMembership(companyId, user);
-
 		let posterUrl = event.poster;
+
 		if (poster) {
 			if (event.poster !== this.config.defaults.poster) {
 				await this.s3Service.deleteFile(event.poster);
@@ -399,12 +402,9 @@ export class CompanyService {
 	}
 
 	async remove(id: number, user: User): Promise<void> {
-		await this.checkMembership(id, user);
-		await this.prisma.company.delete({
-			where: {
-				id,
-			},
-		});
+		await this.checkIsCompanyAdmin(user.id, id);
+
+		await this.prisma.company.delete({ where: { id } });
 	}
 
 	async removeCompanyMember(
@@ -432,7 +432,7 @@ export class CompanyService {
 	async removeEvent(companyId: number, eventId: number, user: User): Promise<void> {
 		const event = await this.eventService.findById(eventId);
 
-		await this.checkMembership(companyId, user);
+		await this.checkIsCompanyAdmin(user.id, companyId);
 
 		if (event.poster !== this.config.defaults.poster) {
 			await this.s3Service.deleteFile(event.poster);
@@ -454,6 +454,20 @@ export class CompanyService {
 				await job.remove();
 			}
 		});
+	}
+
+	async checkIsCompanyAdmin(userId: number, companyId?: number): Promise<void> {
+		if (!companyId) {
+			throw new NotFoundException('Company not found');
+		}
+
+		const company = await this.findById(companyId);
+
+		const membership = company.users?.find((u) => u.user.id === userId);
+
+		if (membership?.role !== CompanyRole.ADMIN) {
+			throw new ForbiddenException('Access denied');
+		}
 	}
 
 	async findPosts(
@@ -506,7 +520,7 @@ export class CompanyService {
 		user: User,
 		poster?: Express.Multer.File
 	): Promise<PostEntity> {
-		await this.checkMembership(companyId, user);
+		await this.checkIsCompanyAdmin(user.id, companyId);
 
 		let posterUrl = this.config.defaults.poster;
 		if (poster) {
@@ -538,7 +552,7 @@ export class CompanyService {
 	): Promise<PostEntity> {
 		const post = await this.postService.findById(postId);
 
-		await this.checkMembership(companyId, user);
+		await this.checkIsCompanyAdmin(user.id, companyId);
 
 		let posterUrl = post.poster;
 		if (poster) {
@@ -580,7 +594,8 @@ export class CompanyService {
 	}
 
 	async removePost(companyId: number, postId: number, user: User): Promise<void> {
-		await this.checkMembership(companyId, user);
+		await this.checkIsCompanyAdmin(user.id, companyId);
+
 		await this.prisma.post.delete({
 			where: {
 				id: postId,
@@ -719,14 +734,5 @@ export class CompanyService {
 				rating: Math.round((_avg.stars ?? 0) * 10) / 10,
 			},
 		});
-	}
-
-	private async checkMembership(companyId: number, user: User): Promise<void> {
-		const company = await this.findById(companyId);
-		const membership = company.users?.find((u) => u.user.id === user.id);
-
-		if (!membership) {
-			throw new ForbiddenException('Access denied');
-		}
 	}
 }

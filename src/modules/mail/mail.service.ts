@@ -1,10 +1,8 @@
 import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
-
 import { createTransport, Transporter } from 'nodemailer';
 import * as handlebars from 'handlebars';
 import * as path from 'path';
 import * as fs from 'node:fs';
-
 import { MailOptions } from './interfaces/mail-options.interface';
 import { SendMailOptions } from './interfaces/send-mail-options.interface';
 import { MODULE_OPTIONS_TOKEN } from './mail.module-definition';
@@ -35,13 +33,14 @@ export class MailService {
 		return handlebars.compile(template)(context);
 	}
 
-	async sendMail({ to, subject, templateName, context }: SendMailOptions) {
+	async sendMail({ to, subject, templateName, context, attachments }: SendMailOptions) {
 		const html = this.renderTemplate(templateName, context);
 
 		await this.transporter.sendMail({
 			to,
 			subject,
 			html,
+			attachments,
 		});
 	}
 }
