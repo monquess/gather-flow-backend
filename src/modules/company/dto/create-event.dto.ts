@@ -110,6 +110,5 @@ export class CreateEventDto {
 	@IsISO8601({
 		strict: true,
 	})
-	@Validate(AfterDateValidator)
 	publishDate?: Date;
 }
