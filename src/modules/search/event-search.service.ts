@@ -67,7 +67,9 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 	}
 
 	async search(
-		options: EventFilteringOptionsDto | CompanyEventFilteringOptionsDto,
+		options:
+			| EventFilteringOptionsDto
+			| (CompanyEventFilteringOptionsDto & { companyId: number }),
 		sort: string,
 		order: SortOrder,
 		page: number,
@@ -108,24 +110,48 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 	}
 
 	async similar(id: string, limit: number): Promise<Event[]> {
+		const { _source } = await this.es.get<Omit<Event, 'id'>>({
+			index: this._index,
+			id,
+		});
 		const { hits } = await this.es.search<Omit<Event, 'id'>>({
 			index: this._index,
 			body: {
 				query: {
 					bool: {
-						must: [
+						should: [
 							{
 								more_like_this: {
-									fields: ['title', 'description', 'format', 'theme', 'location'],
+									fields: ['title^3', 'description^1', 'location^2'],
 									like: [
 										{
 											_index: this._index,
-											_id: id,
+											doc: _source,
 										},
 									],
+									min_term_freq: 1,
+									min_doc_freq: 1,
+									boost: 3,
+								},
+							},
+							{
+								term: {
+									theme: {
+										value: _source?.theme,
+										boost: 1.5,
+									},
+								},
+							},
+							{
+								term: {
+									format: {
+										value: _source?.format,
+										boost: 1,
+									},
 								},
 							},
 						],
+						must_not: [{ term: { id } }],
 						filter: [
 							{
 								term: {
@@ -133,6 +159,7 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 								},
 							},
 						],
+						minimum_should_match: 1,
 					},
 				},
 			},
@@ -156,7 +183,7 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 				return {
 					multi_match: {
 						query: value,
-						fields: ['title^4', 'description^3', 'location'],
+						fields: ['title^4', 'description^2', 'location'],
 						type: 'best_fields',
 						operator: 'or',
 					},
@@ -185,7 +212,7 @@ export class EventSearchService extends SearchService<Event> implements OnModule
 				};
 			}
 
-			if (key === 'status') {
+			if (key === 'status' || key === 'companyId') {
 				return {
 					term: {
 						[key]: value,

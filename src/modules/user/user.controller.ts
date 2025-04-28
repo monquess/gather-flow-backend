@@ -32,7 +32,7 @@ import { FilteringOptionsDto, UpdateUserDto, UpdatePasswordDto } from './dto';
 import { CurrentUser, UploadedImage } from '@common/decorators';
 import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 
-@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
+@UseInterceptors(CacheInterceptor, ClassSerializerInterceptor)
 @SerializeOptions({ type: UserEntity })
 @Controller('users')
 export class UserController {

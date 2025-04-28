@@ -16,6 +16,11 @@ const autocompleteTextProperty: MappingProperty = {
 	},
 };
 
+const dateProperty: MappingProperty = {
+	type: 'date',
+	format: 'strict_date_optional_time',
+};
+
 export const eventMapping: MappingTypeMapping = {
 	properties: {
 		title: autocompleteTextProperty,
@@ -51,13 +56,8 @@ export const eventMapping: MappingTypeMapping = {
 		ticketQuantity: {
 			type: 'integer',
 		},
-		startDate: {
-			type: 'date',
-			format: 'strict_date_optional_time',
-		},
-		endDate: {
-			type: 'date',
-			format: 'strict_date_optional_time',
-		},
+		startDate: dateProperty,
+		endDate: dateProperty,
+		publishDate: dateProperty,
 	},
 } as const;
