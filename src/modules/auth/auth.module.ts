@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { HttpModule } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 
 import { PrismaModule } from '@modules/prisma/prisma.module';
 import { RedisModule } from '@modules/redis/redis.module';
 import { UserModule } from '@modules/user/user.module';
+import { RedisConfigFactory } from '@modules/config/factories';
 
 import {
 	LocalStrategy,
@@ -18,15 +19,16 @@ import { AuthController } from './auth.controller';
 
 @Module({
 	imports: [
-		PrismaModule,
-		RedisModule.registerAsync({
-			useFactory: (configService: ConfigService) => ({
-				host: configService.get<string>('REDIS_HOST'),
-				port: configService.get<number>('REDIS_PORT'),
-				password: configService.get<string>('REDIS_PASSWORD'),
-			}),
-			inject: [ConfigService],
+		JwtModule.register({
+			global: true,
 		}),
+		RedisModule.registerAsync({
+			useFactory: (factory: RedisConfigFactory) => {
+				return factory.createOptions();
+			},
+			inject: [RedisConfigFactory],
+		}),
+		PrismaModule,
 		UserModule,
 		HttpModule,
 	],

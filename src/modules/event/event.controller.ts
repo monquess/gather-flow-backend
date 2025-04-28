@@ -1,5 +1,6 @@
 import {
 	Body,
+	ClassSerializerInterceptor,
 	Controller,
 	Get,
 	Param,
@@ -7,41 +8,51 @@ import {
 	Patch,
 	Post,
 	Query,
+	UseInterceptors,
 } from '@nestjs/common';
-import { EventService } from './event.service';
+import { User } from '@prisma/client';
 import { Public } from '@common/decorators/public.decorator';
-import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
-import { FilteringOptionsDto } from './dto/filtering-options.dto';
-import { EventEntity } from './entities/event.entity';
-import { Paginated } from '@common/pagination/paginated';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { Paginated, PaginationOptionsDto } from '@common/pagination';
+import { Environment } from '@common/decorators/environment.decorator';
+import { NodeEnv } from '@common/enum/node-env.enum';
+import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
+import { CommentEntity } from '@modules/comment/entities/comment.entity';
+import { CreateCommentDto } from '@modules/comment/dto';
 import {
 	ApiEventCreatePromocode,
 	ApiEventCreateTicket,
+	ApiEventCreateComment,
 	ApiEventFindAll,
 	ApiEventFindById,
 	ApiEventFindPromocodes,
 	ApiEventUpdatePromocode,
+	ApiEventFindComments,
+	ApiEventFindSimilar,
 } from './decorators/api-event.decorator';
 import { CreateTicketDto } from './dto/create-ticket.dto';
-import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { User } from '@prisma/client';
 import { CreateEventTicketResponseDto } from './dto/create-event-ticket-response.dto';
 import { CreatePromocodeDto } from './dto/create-promocode.dto';
 import { PromocodeEntity } from './entities/promocode.entity';
 import { UpdatePromocodeDto } from './dto/update-promocode.dto';
+import {
+	EventFilteringOptionsDto,
+	EventSortingOptionsDto,
+	SimilarEventsQueryDto,
+} from './dto';
+import { EventEntity } from './entities/event.entity';
+import { EventService } from './event.service';
 
+@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
 @Controller('events')
 export class EventController {
 	constructor(private readonly eventService: EventService) {}
 
-	@ApiEventFindAll()
+	@Environment(NodeEnv.DEV)
 	@Public()
-	@Get()
-	findAll(
-		@Query() filteringOptions: FilteringOptionsDto,
-		@Query() paginationOptions: PaginationOptionsDto
-	): Promise<Paginated<EventEntity>> {
-		return this.eventService.findAll(filteringOptions, paginationOptions);
+	@Post('index')
+	index(): Promise<void> {
+		return this.eventService.index();
 	}
 
 	@ApiEventFindPromocodes()
@@ -94,5 +105,46 @@ export class EventController {
 			updatePromocodeDto,
 			user
 		);
+	}
+
+	@ApiEventFindAll()
+	@Public()
+	@Get()
+	findAll(
+		@Query() filteringOptions: EventFilteringOptionsDto,
+		@Query() sortingOptions: EventSortingOptionsDto,
+		@Query() paginationOptions: PaginationOptionsDto
+	): Promise<Paginated<EventEntity>> {
+		return this.eventService.findAll(filteringOptions, sortingOptions, paginationOptions);
+	}
+
+	@ApiEventFindSimilar()
+	@Public()
+	@Get(':id/similar')
+	findSimilar(
+		@Param('id', ParseIntPipe) id: number,
+		@Query() { limit }: SimilarEventsQueryDto
+	): Promise<EventEntity[]> {
+		return this.eventService.findSimilar(id, limit);
+	}
+
+	@ApiEventFindComments()
+	@Public()
+	@Get(':id/comments')
+	findComment(
+		@Param('id', ParseIntPipe) id: number,
+		@Query() paginationOptions: PaginationOptionsDto
+	): Promise<Paginated<CommentEntity>> {
+		return this.eventService.findComments(id, paginationOptions);
+	}
+
+	@ApiEventCreateComment()
+	@Post(':id/comments')
+	createComment(
+		@Param('id', ParseIntPipe) id: number,
+		@Body() dto: CreateCommentDto,
+		@CurrentUser() user: User
+	): Promise<CommentEntity> {
+		return this.eventService.createComment(id, dto, user);
 	}
 }

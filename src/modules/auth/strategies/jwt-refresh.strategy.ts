@@ -1,23 +1,24 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
-import { RedisService } from '@modules/redis/redis.service';
-import { TOKEN_PREFIXES } from '../constants/token-prefixes.constant';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
+
 import * as bcrypt from 'bcryptjs';
+import { Request } from 'express';
+
+import { RedisService } from '@modules/redis/redis.service';
 import { PrismaService } from '@modules/prisma/prisma.service';
+import { authConfig, AuthConfig } from '@modules/config/configs';
+
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { TOKEN_PREFIXES } from '../constants/token-prefixes.constant';
 import { COOKIE_NAMES } from '../constants/cookie-names.constant';
 
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(
-	Strategy,
-	'jwt-refresh'
-) {
+export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
 	constructor(
-		private readonly config: ConfigService<EnvironmentVariables, true>,
+		@Inject(authConfig.KEY)
+		private readonly config: ConfigType<AuthConfig>,
 		private readonly prisma: PrismaService,
 		private readonly redis: RedisService
 	) {
@@ -28,16 +29,13 @@ export class JwtRefreshStrategy extends PassportStrategy(
 				},
 			]),
 			ignoreExpiration: false,
-			secretOrKey: config.get<string>('JWT_REFRESH_SECRET'),
+			secretOrKey: config.jwt.refresh.secret,
 			passReqToCallback: true,
 		});
 	}
 
 	async validate(req: Request, payload: JwtPayload) {
-		const token = await this.redis.get<string>(
-			TOKEN_PREFIXES.REFRESH,
-			payload.sub
-		);
+		const token = await this.redis.get<string>(TOKEN_PREFIXES.REFRESH, payload.sub);
 		const user = await this.prisma.user.findUnique({
 			where: {
 				id: payload.sub,

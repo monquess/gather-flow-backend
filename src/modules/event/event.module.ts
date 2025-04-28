@@ -5,10 +5,12 @@ import { PrismaModule } from '@modules/prisma/prisma.module';
 import { PaymentModule } from '@modules/payment/payment.module';
 import { TicketModule } from '@modules/ticket/ticket.module';
 import { CompanyModule } from '@modules/company/company.module';
+import { SearchModule } from '@modules/search/search.module';
 
 @Module({
 	imports: [
 		PrismaModule,
+		SearchModule,
 		PaymentModule,
 		TicketModule,
 		forwardRef(() => CompanyModule),

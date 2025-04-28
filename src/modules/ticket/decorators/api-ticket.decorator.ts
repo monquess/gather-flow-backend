@@ -1,11 +1,7 @@
-import { ApiPaginatedResponse } from '@common/pagination/api-paginated-response';
 import { applyDecorators } from '@nestjs/common';
-import {
-	ApiNotFoundResponse,
-	ApiOkResponse,
-	ApiOperation,
-} from '@nestjs/swagger';
+import { ApiNotFoundResponse, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { TicketEntity } from '../entities/ticket.entity';
+import { ApiPaginatedResponse } from '@common/decorators';
 
 export const ApiTicketFindAll = () =>
 	applyDecorators(

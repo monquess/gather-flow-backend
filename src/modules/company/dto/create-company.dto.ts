@@ -6,32 +6,33 @@ export class CreateCompanyDto {
 		type: String,
 		example: 'Monquess',
 	})
-	@IsNotEmpty()
 	@IsString()
+	@IsNotEmpty()
 	readonly name: string;
 
 	@ApiProperty({
-		example: 'About company...',
 		type: String,
+		example: 'About company...',
 	})
 	@IsOptional()
 	@IsString()
-	description?: string;
+	@IsNotEmpty()
+	readonly description?: string;
 
 	@ApiProperty({
 		type: String,
 		format: 'email',
 		example: 'johndoe123@gmail.com',
 	})
-	@IsNotEmpty()
 	@IsEmail()
 	readonly email: string;
 
 	@ApiProperty({
-		example: 'United States Minnesota 46702 Jaydon Plains',
 		type: String,
+		example: 'United States Minnesota 46702 Jaydon Plains',
 	})
 	@IsOptional()
 	@IsString()
-	location: string;
+	@IsNotEmpty()
+	readonly location: string;
 }

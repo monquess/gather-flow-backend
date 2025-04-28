@@ -3,21 +3,18 @@ import {
 	ClassSerializerInterceptor,
 	Controller,
 	Delete,
-	FileTypeValidator,
 	Get,
 	HttpCode,
 	HttpStatus,
-	MaxFileSizeValidator,
 	Param,
-	ParseFilePipe,
 	ParseIntPipe,
 	Patch,
 	Query,
 	SerializeOptions,
-	UploadedFile,
 	UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { User } from '@prisma/client';
 
 import { UserService } from './user.service';
 import { UserEntity } from './entities/user.entity';
@@ -32,11 +29,10 @@ import {
 } from './decorators/api-user.decorator';
 import { FilteringOptionsDto, UpdateUserDto, UpdatePasswordDto } from './dto';
 
-import { ImageTransformPipe } from '@modules/s3/pipes/image-transform.pipe';
-import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { User } from '@prisma/client';
+import { CurrentUser, UploadedImage } from '@common/decorators';
+import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 
-@UseInterceptors(ClassSerializerInterceptor)
+@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
 @SerializeOptions({ type: UserEntity })
 @Controller('users')
 export class UserController {
@@ -50,9 +46,7 @@ export class UserController {
 
 	@ApiUserFindAll()
 	@Get()
-	findAll(
-		@Query() filteringOptions: FilteringOptionsDto
-	): Promise<UserEntity[]> {
+	findAll(@Query() filteringOptions: FilteringOptionsDto): Promise<UserEntity[]> {
 		return this.userService.findAll(filteringOptions);
 	}
 
@@ -82,24 +76,12 @@ export class UserController {
 
 	@ApiUserUpdateAvatar()
 	@Patch(':id/avatar')
-	@UseInterceptors(FileInterceptor('file'))
+	@UseInterceptors(FileInterceptor('avatar'))
 	updateAvatar(
 		@Param('id', ParseIntPipe) id: number,
-		@UploadedFile(
-			new ParseFilePipe({
-				validators: [
-					new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp|tiff)' }),
-					new MaxFileSizeValidator({
-						maxSize: 10e6,
-						message: 'File is too large. Max file size is 10MB',
-					}),
-				],
-			}),
-			new ImageTransformPipe()
-		)
-		file: Express.Multer.File
+		@UploadedImage() avatar: Express.Multer.File
 	): Promise<UserEntity> {
-		return this.userService.updateAvatar(id, file);
+		return this.userService.updateAvatar(id, avatar);
 	}
 
 	@ApiUserRemove()

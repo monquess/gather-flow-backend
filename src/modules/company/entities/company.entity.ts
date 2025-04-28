@@ -44,6 +44,18 @@ export class CompanyEntity {
 	})
 	createdAt: Date;
 
+	@ApiProperty({
+		type: Number,
+		example: 4.5,
+	})
+	rating: number;
+
+	@ApiProperty({
+		type: Number,
+		example: 128,
+	})
+	reviews: number;
+
 	users?: CompanyMemberEntity[];
 
 	constructor(partial: Partial<CompanyEntity>) {

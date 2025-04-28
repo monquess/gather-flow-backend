@@ -1,9 +1,10 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { RedisService } from './redis.service';
 import { RedisOptions } from 'ioredis';
+
 import { REDIS_OPTIONS } from './constants/redis.constants';
 import { RedisAsyncOptions } from './interfaces/redis-async-options.interface';
 import { RedisOptionsFactory } from './interfaces/redis-options-factory.interface';
+import { RedisService } from './redis.service';
 
 @Module({})
 export class RedisModule {
@@ -44,9 +45,7 @@ export class RedisModule {
 		return providers;
 	}
 
-	private static createAsyncOptionsProvider(
-		options: RedisAsyncOptions
-	): Provider {
+	private static createAsyncOptionsProvider(options: RedisAsyncOptions): Provider {
 		if (options.useFactory) {
 			return {
 				provide: REDIS_OPTIONS,

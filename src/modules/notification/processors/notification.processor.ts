@@ -22,9 +22,7 @@ export class NotificationProcessor extends WorkerHost {
 			const NotificationClass = NotificationRegistry[notification.className];
 
 			if (NotificationClass) {
-				const notificationInstance = new NotificationClass(
-					notification.properties
-				);
+				const notificationInstance = new NotificationClass(notification.properties);
 
 				await channelInstance.send(notifiable, notificationInstance);
 			}

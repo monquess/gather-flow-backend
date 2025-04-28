@@ -16,10 +16,7 @@ export class RedisService {
 		}
 	}
 
-	async get<T = string>(
-		prefix: string,
-		key: string | number
-	): Promise<T | null> {
+	async get<T = string>(prefix: string, key: string | number): Promise<T | null> {
 		const value = await this.client.get(`${prefix}:${key}`);
 
 		if (!value) {

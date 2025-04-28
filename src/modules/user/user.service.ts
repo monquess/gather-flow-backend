@@ -1,5 +1,5 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 
 import * as bcrypt from 'bcryptjs';
 
@@ -13,20 +13,19 @@ import { UserEntity } from './entities/user.entity';
 
 import { S3Service } from '@modules/s3/s3.service';
 import { PrismaService } from '@modules/prisma/prisma.service';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
+import { appConfig, AppConfig } from '@modules/config/configs/app.config';
+import { StoragePath } from '@modules/s3/enum/storage-path.enum';
 
 @Injectable()
 export class UserService {
 	constructor(
+		@Inject(appConfig.KEY)
+		private readonly config: ConfigType<AppConfig>,
 		private readonly prisma: PrismaService,
-		private readonly s3Service: S3Service,
-		private readonly configService: ConfigService<EnvironmentVariables, true>
+		private readonly s3Service: S3Service
 	) {}
 
-	async findAll({
-		username,
-		email,
-	}: FilteringOptionsDto): Promise<UserEntity[]> {
+	async findAll({ username, email }: FilteringOptionsDto): Promise<UserEntity[]> {
 		return this.prisma.user.findMany({
 			where: {
 				username: {
@@ -60,12 +59,11 @@ export class UserService {
 	async create(dto: CreateUserDto) {
 		const salt = await bcrypt.genSalt();
 		const hash = dto.password ? await bcrypt.hash(dto.password, salt) : null;
-		const avatar = this.configService.get<string>('DEFAULT_AVATAR_PATH');
 
 		return this.prisma.user.create({
 			data: {
 				...dto,
-				avatar,
+				avatar: this.config.defaults.avatar,
 				password: hash,
 			},
 		});
@@ -87,10 +85,7 @@ export class UserService {
 		const user = await this.findById(id);
 
 		if (user.password) {
-			const passwordMatch = await bcrypt.compare(
-				currentPassword,
-				user.password
-			);
+			const passwordMatch = await bcrypt.compare(currentPassword, user.password);
 
 			if (!passwordMatch) {
 				throw new BadRequestException('Current password is incorrect');
@@ -108,18 +103,14 @@ export class UserService {
 		});
 	}
 
-	async updateAvatar(
-		id: number,
-		avatar: Express.Multer.File
-	): Promise<UserEntity> {
-		const defaultAvatar = this.configService.get<string>('DEFAULT_AVATAR_PATH');
+	async updateAvatar(id: number, avatar: Express.Multer.File): Promise<UserEntity> {
 		const user = await this.findById(id);
 
-		if (user.avatar !== defaultAvatar) {
+		if (user.avatar !== this.config.defaults.avatar) {
 			await this.s3Service.deleteFile(user.avatar);
 		}
 
-		const avatarData = await this.s3Service.uploadFile('avatars', avatar);
+		const avatarData = await this.s3Service.uploadFile(StoragePath.AVATARS, avatar);
 
 		return this.prisma.user.update({
 			where: {

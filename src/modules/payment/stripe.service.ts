@@ -1,4 +1,3 @@
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
 import { CompanyService } from '@modules/company/company.service';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import {
@@ -8,12 +7,14 @@ import {
 	Injectable,
 	RawBodyRequest,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigType } from '@nestjs/config';
 import { PaymentStatus, Prisma, User } from '@prisma/client';
 import Stripe from 'stripe';
 import { ConnectStripeResponseDto } from './dto/connect-stripe-response.dto';
 import { TicketService } from '@modules/ticket/ticket.service';
 import { MailService } from '@modules/mail/mail.service';
+import { StripeConfig, stripeConfig } from '@modules/config/configs/stripe.config';
+import { AppConfig, appConfig } from '@modules/config/configs';
 
 @Injectable()
 export class StripeService {
@@ -21,15 +22,16 @@ export class StripeService {
 
 	constructor(
 		private readonly prisma: PrismaService,
-		private readonly configService: ConfigService<EnvironmentVariables, true>,
 		private readonly ticketService: TicketService,
 		@Inject(forwardRef(() => CompanyService))
 		private readonly companyService: CompanyService,
-		private readonly mailService: MailService
+		private readonly mailService: MailService,
+		@Inject(stripeConfig.KEY)
+		private readonly stripeConfig: ConfigType<StripeConfig>,
+		@Inject(appConfig.KEY)
+		private readonly appConfig: ConfigType<AppConfig>
 	) {
-		this.stripe = new Stripe(
-			this.configService.get<string>('STRIPE_SECRET_KEY')
-		);
+		this.stripe = new Stripe(stripeConfig.secretKey);
 	}
 
 	async getStripeConnectUrl(
@@ -38,17 +40,14 @@ export class StripeService {
 	): Promise<ConnectStripeResponseDto> {
 		await this.companyService.checkIsCompanyAdmin(user.id, companyId);
 
-		const redirectUri = `${this.configService.get<string>('APP_URL')}/api/v1/payments/stripe-callback`;
-		const stripeClientId = this.configService.get<string>('STRIPE_CLIENT_ID');
+		const redirectUri = `${this.appConfig.url}/api/v1/payments/stripe-callback`;
+		const stripeClientId = this.stripeConfig.clientId;
 		const stripeConnectUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${stripeClientId}&scope=read_write&redirect_uri=${redirectUri}&state=${companyId}`;
 
 		return { url: stripeConnectUrl };
 	}
 
-	async handleStripeOAuthCallback(
-		code: string,
-		companyId: number
-	): Promise<void> {
+	async handleStripeOAuthCallback(code: string, companyId: number): Promise<void> {
 		try {
 			const response = await this.stripe.oauth.token({
 				grant_type: 'authorization_code',
@@ -75,15 +74,11 @@ export class StripeService {
 		itemQuantity: number,
 		metadata?: Stripe.Metadata
 	): Promise<Stripe.PaymentIntent & { client_secret: string }> {
-		const company = await this.companyService.findById(
-			Number(metadata?.companyId)
-		);
+		const company = await this.companyService.findById(Number(metadata?.companyId));
 
 		if (!company?.stripeAccountId) {
 			// TODO: add check for stripe account id before creating event
-			throw new BadRequestException(
-				'Company does not have a connected Stripe account'
-			);
+			throw new BadRequestException('Company does not have a connected Stripe account');
 		}
 
 		const paymentIntent = await this.stripe.paymentIntents.create({
@@ -105,7 +100,7 @@ export class StripeService {
 
 	async handleStripeWebhook(req: RawBodyRequest<Request>): Promise<void> {
 		const sig = req.headers['stripe-signature'] as string;
-		const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_KEY');
+		const webhookSecret = this.stripeConfig.webhookKey;
 		let event: Stripe.Event;
 
 		try {
@@ -125,15 +120,11 @@ export class StripeService {
 		}
 	}
 
-	async handleCheckoutCompleted(
-		paymentIntent: Stripe.PaymentIntent
-	): Promise<void> {
+	async handleCheckoutCompleted(paymentIntent: Stripe.PaymentIntent): Promise<void> {
 		const ticketIds = paymentIntent.metadata.ticketIds?.split(',').map(Number);
 
 		const ticketPdfs = await Promise.all(
-			ticketIds.map((ticketId) =>
-				this.ticketService.generateTicketPdf(ticketId)
-			)
+			ticketIds.map((ticketId) => this.ticketService.generateTicketPdf(ticketId))
 		);
 
 		await this.prisma.payment.updateMany({
@@ -153,9 +144,7 @@ export class StripeService {
 		});
 	}
 
-	async handleCheckoutExpired(
-		paymentIntent: Stripe.PaymentIntent
-	): Promise<void> {
+	async handleCheckoutExpired(paymentIntent: Stripe.PaymentIntent): Promise<void> {
 		await this.prisma.$transaction(async (prisma) => {
 			const payment = await prisma.payment.findFirst({
 				where: {

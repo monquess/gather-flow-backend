@@ -1,37 +1,28 @@
-import {
-	Inject,
-	Injectable,
-	InternalServerErrorException,
-} from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { createTransport, Transporter } from 'nodemailer';
 import * as handlebars from 'handlebars';
 import * as path from 'path';
 import * as fs from 'node:fs';
 import { MailOptions } from './interfaces/mail-options.interface';
-import { MODULE_OPTIONS_TOKEN } from './mail.module-definition';
 import { SendMailOptions } from './interfaces/send-mail-options.interface';
+import { MODULE_OPTIONS_TOKEN } from './mail.module-definition';
 
 @Injectable()
 export class MailService {
 	private transporter: Transporter;
 
 	constructor(
-		@Inject(MODULE_OPTIONS_TOKEN) private readonly mailOptions: MailOptions
+		@Inject(MODULE_OPTIONS_TOKEN)
+		private readonly options: MailOptions
 	) {
-		this.transporter = createTransport(
-			mailOptions.transport,
-			mailOptions.defaults
-		);
+		this.transporter = createTransport(options.transport, options.defaults);
 	}
 
 	private renderTemplate(
 		templateName: string,
 		context?: Record<string, unknown>
 	): string {
-		const templatePath = path.join(
-			this.mailOptions.template.dir,
-			`${templateName}.hbs`
-		);
+		const templatePath = path.join(this.options.template.dir, `${templateName}.hbs`);
 
 		if (!fs.existsSync(templatePath)) {
 			throw new InternalServerErrorException();
@@ -42,13 +33,7 @@ export class MailService {
 		return handlebars.compile(template)(context);
 	}
 
-	async sendMail({
-		to,
-		subject,
-		templateName,
-		context,
-		attachments,
-	}: SendMailOptions) {
+	async sendMail({ to, subject, templateName, context, attachments }: SendMailOptions) {
 		const html = this.renderTemplate(templateName, context);
 
 		await this.transporter.sendMail({

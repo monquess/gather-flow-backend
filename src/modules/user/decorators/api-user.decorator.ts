@@ -53,7 +53,7 @@ export const ApiUserFindById = () =>
 			type: UserEntity,
 		}),
 		ApiNotFoundResponse({
-			description: 'Record not found',
+			description: 'User not found',
 		})
 	);
 
@@ -63,7 +63,7 @@ export const ApiUserUpdate = () =>
 		ApiOperation({ summary: 'Update user' }),
 		ApiParam({
 			name: 'id',
-			description: 'user id',
+			description: 'User id',
 		}),
 		ApiBody({
 			type: UpdateUserDto,
@@ -95,13 +95,15 @@ export const ApiUserUpdateAvatar = () =>
 		ApiOperation({ summary: 'Update avatar' }),
 		ApiParam({
 			name: 'id',
-			description: 'user id',
+			description: 'User id',
 		}),
 		ApiConsumes('multipart/form-data'),
 		ApiBody({
 			type: FileUploadDto,
 		}),
-		ApiOkResponse({ type: UserEntity }),
+		ApiOkResponse({
+			type: UserEntity,
+		}),
 		ApiNotFoundResponse({ description: 'User not found' })
 	);
 
@@ -111,7 +113,7 @@ export const ApiUserRemove = () =>
 		ApiOperation({ summary: 'Delete user' }),
 		ApiParam({
 			name: 'id',
-			description: 'user id',
+			description: 'User id',
 		}),
 		ApiNotFoundResponse({ description: 'User not found' })
 	);

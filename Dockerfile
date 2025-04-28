@@ -1,6 +1,7 @@
-FROM node:22.11.0-alpine AS build
+# Base setup stage
+FROM node:22.14.0-alpine AS base
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
@@ -8,22 +9,36 @@ COPY prisma ./prisma/
 RUN npm ci
 RUN npx prisma generate
 
-COPY . .
 
+# Build stage
+FROM base AS build
+
+COPY . .
 RUN npm run build
 
-FROM node:22.11.0-alpine AS production
 
-WORKDIR /app
+# Development stage
+FROM build AS development
 
-ENV NODE_ENV production
+ENV NODE_ENV=development
+EXPOSE 3000
 
-COPY --chown=node:node --from=build /app/package.json /app/package-lock.json ./
-COPY --chown=node:node --from=build /app/dist ./dist
-COPY --chown=node:node --from=build /app/prisma ./prisma
+CMD ["npm", "run", "start:migrate:dev"]
 
-RUN npx prisma generate
+
+# Production stage
+FROM node:22.14.0-alpine AS production
+
+WORKDIR /usr/src/app
+
+ENV NODE_ENV=production
+
+COPY --chown=node:node --from=build /usr/src/app/package.json /usr/src/app/package-lock.json ./
+COPY --chown=node:node --from=build /usr/src/app/dist ./dist
+COPY --chown=node:node --from=build /usr/src/app/prisma ./prisma
+
 RUN npm ci --omit=dev && npm cache clean --force
+RUN npx prisma generate
 
 EXPOSE 3000
 

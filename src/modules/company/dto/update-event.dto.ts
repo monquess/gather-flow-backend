@@ -8,8 +8,9 @@ export class UpdateEventDto extends PartialType(CreateEventDto) {
 		type: String,
 		enum: EventStatus,
 		example: EventStatus.PUBLISHED,
+		required: false,
 	})
 	@IsOptional()
 	@IsEnum(EventStatus)
-	status?: EventStatus;
+	readonly status?: EventStatus;
 }

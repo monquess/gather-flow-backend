@@ -1,13 +1,12 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import {
-	DeleteObjectCommand,
-	PutObjectCommand,
-	S3Client,
-} from '@aws-sdk/client-s3';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
+
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { extname } from 'path';
 import { v4 as uuid } from 'uuid';
+
+import { StorageConfig, storageConfig } from '@modules/config/configs';
+import { StoragePath } from './enum/storage-path.enum';
 
 @Injectable()
 export class S3Service {
@@ -16,16 +15,17 @@ export class S3Service {
 	private endpoint: string;
 
 	constructor(
-		private readonly configService: ConfigService<EnvironmentVariables, true>
+		@Inject(storageConfig.KEY)
+		private readonly config: ConfigType<StorageConfig>
 	) {
-		this.bucket = this.configService.get<string>('S3_BUCKET_NAME');
-		this.endpoint = this.configService.get<string>('S3_ENDPOINT');
+		this.bucket = this.config.bucket;
+		this.endpoint = this.config.endpoint;
 
 		this.client = new S3Client({
-			region: this.configService.get<string>('S3_REGION'),
+			region: this.config.region,
 			credentials: {
-				accessKeyId: this.configService.get<string>('S3_ACCESS_KEY_ID'),
-				secretAccessKey: this.configService.get<string>('S3_SECRET_ACCESS_KEY'),
+				accessKeyId: this.config.access.id,
+				secretAccessKey: this.config.access.secret,
 			},
 			endpoint: this.endpoint,
 			forcePathStyle: true,
@@ -33,7 +33,7 @@ export class S3Service {
 	}
 
 	async uploadFile(
-		path: string,
+		path: StoragePath,
 		file: Express.Multer.File
 	): Promise<{ key: string; url: string }> {
 		try {

@@ -1,10 +1,11 @@
 import {
 	BadRequestException,
 	ForbiddenException,
+	Inject,
 	Injectable,
 	UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import * as crypto from 'crypto';
@@ -20,18 +21,23 @@ import { UserEntity } from '@modules/user/entities/user.entity';
 import { MailService } from '@modules/mail/mail.service';
 import { AuthResponseDto, RegisterDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { EnvironmentVariables } from '@config/env/environment-variables.config';
+import { AppConfig, appConfig } from '@modules/config/configs/app.config';
 import { TOKEN_PREFIXES } from './constants/token-prefixes.constant';
 import { COOKIE_NAMES } from './constants/cookie-names.constant';
 
-import { CreateUserDto } from '@modules/user/dto/create-user.dto';
+import { CreateUserDto } from '@modules/user/dto';
+import { NodeEnv } from '@common/enum/node-env.enum';
+import { authConfig, AuthConfig } from '@modules/config/configs';
 
 @Injectable()
 export class AuthService {
 	constructor(
+		@Inject(authConfig.KEY)
+		private readonly authConfig: ConfigType<AuthConfig>,
+		@Inject(appConfig.KEY)
+		private readonly appConfig: ConfigType<AppConfig>,
 		private readonly prisma: PrismaService,
 		private readonly redis: RedisService,
-		private readonly configService: ConfigService<EnvironmentVariables, true>,
 		private readonly userService: UserService,
 		private readonly jwtService: JwtService,
 		private readonly mailService: MailService
@@ -107,12 +113,9 @@ export class AuthService {
 	}
 
 	async verifyEmail(email: string, verifyToken: string): Promise<void> {
-		const token = await this.redis.get<string>(
-			TOKEN_PREFIXES.VERIFICATION,
-			email
-		);
+		const token = await this.redis.get<string>(TOKEN_PREFIXES.VERIFICATION, email);
 
-		if (token !== verifyToken) {
+		if (token?.toLowerCase() !== verifyToken.toLowerCase()) {
 			throw new BadRequestException('Invalid email or token');
 		}
 
@@ -132,12 +135,9 @@ export class AuthService {
 		resetToken: string,
 		password: string
 	): Promise<void> {
-		const token = await this.redis.get<string>(
-			TOKEN_PREFIXES.RESET_PASSWORD,
-			email
-		);
+		const token = await this.redis.get<string>(TOKEN_PREFIXES.RESET_PASSWORD, email);
 
-		if (token !== resetToken) {
+		if (token?.toLowerCase() !== resetToken.toLowerCase()) {
 			await this.checkResetPasswordRetries(email);
 			throw new BadRequestException('Invalid email or token');
 		}
@@ -184,12 +184,7 @@ export class AuthService {
 			token,
 		};
 
-		await this.redis.set(
-			TOKEN_PREFIXES.VERIFICATION,
-			user.email,
-			token,
-			15 * 60
-		);
+		await this.redis.set(TOKEN_PREFIXES.VERIFICATION, user.email, token, 15 * 60);
 
 		await this.mailService.sendMail({
 			to: user.email,
@@ -222,7 +217,7 @@ export class AuthService {
 		token: string,
 		res: Response
 	): Promise<void> {
-		const exp = this.configService.get<number>('JWT_REFRESH_EXPIRATION');
+		const exp = this.authConfig.jwt.refresh.expiration;
 		const salt = await bcrypt.genSalt();
 
 		await this.redis.set(
@@ -235,7 +230,7 @@ export class AuthService {
 		res.cookie(COOKIE_NAMES.REFRESH_TOKEN, token, {
 			httpOnly: true,
 			sameSite: 'lax',
-			secure: this.configService.get<string>('NODE_ENV') === 'production',
+			secure: this.appConfig.env === NodeEnv.PROD,
 			maxAge: exp * 1000,
 		});
 	}
@@ -250,21 +245,19 @@ export class AuthService {
 
 		if (retries > 5) {
 			await this.redis.del(TOKEN_PREFIXES.RESET_PASSWORD, email);
-			throw new ForbiddenException(
-				'Too many failed attempts. Try again later.'
-			);
+			throw new ForbiddenException('Too many failed attempts. Try again later.');
 		}
 	}
 
 	private async generateTokens(payload: JwtPayload): Promise<[string, string]> {
 		return Promise.all([
 			this.jwtService.signAsync(payload, {
-				secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-				expiresIn: this.configService.get<number>('JWT_ACCESS_EXPIRATION'),
+				secret: this.authConfig.jwt.access.secret,
+				expiresIn: this.authConfig.jwt.access.expiration,
 			}),
 			this.jwtService.signAsync(payload, {
-				secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-				expiresIn: this.configService.get<number>('JWT_REFRESH_EXPIRATION'),
+				secret: this.authConfig.jwt.refresh.secret,
+				expiresIn: this.authConfig.jwt.refresh.expiration,
 			}),
 		]);
 	}
