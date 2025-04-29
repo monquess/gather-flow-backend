@@ -26,6 +26,7 @@ model User {
   tickets       Ticket[]
   payments      Payment[]
   subscriptions CompanySubscription[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -218,6 +219,19 @@ model CompanySubscription {
   @@map("company_subscriptions")
 }
 
+model Notification {
+  id      Int              @id @default(autoincrement())
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  Int              @map("user_id")
+  message String           @db.Text
+  isRead  Boolean          @default(false)
+  type    NotificationType
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
 enum Provider {
   LOCAL
   GOOGLE
@@ -257,4 +271,12 @@ enum PaymentStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+enum NotificationType {
+  EVENT_REMINDER
+  NEW_EVENT
+  NEW_POST
+  NEW_PROMOCODE
+  NEW_ATTENDEE
 }
