@@ -182,11 +182,8 @@ export class CompanyService {
 			},
 		});
 
-		console.log(result);
-
 		return {
 			data: ids.map((id) => {
-				console.log(result.find((e) => e.id === id));
 				return new EventEntity(result.find((e) => e.id === id)!);
 			}),
 			meta: getPaginationMeta(count, page, limit),
