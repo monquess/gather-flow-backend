@@ -27,6 +27,7 @@ model User {
   payments      Payment[]
   subscriptions CompanySubscription[]
   notifications Notification[]
+  reminders     Reminder[]
 
   @@map("users")
 }
@@ -109,10 +110,10 @@ model Event {
   company            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId          Int                @map("company_id")
 
-  comments Comment[]
-
+  comments   Comment[]
   tickets    Ticket[]
   promocodes Promocode[]
+  reminders  Reminder[]
 
   @@map("events")
 }
@@ -230,6 +231,18 @@ model Notification {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("notifications")
+}
+
+model Reminder {
+  id      Int      @id @default(autoincrement())
+  eventId Int      @map("event_id")
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  Int      @map("user_id")
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  time    DateTime
+
+  @@unique([eventId, userId, time])
+  @@map("reminders")
 }
 
 enum Provider {

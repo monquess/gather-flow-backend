@@ -27,6 +27,9 @@ import { CommentEntity } from '@modules/comment/entities/comment.entity';
 import { NotificationService } from '@modules/notification/notification.service';
 import { SubscriptionService } from '@modules/subscription/subscription.service';
 import { NewPromocodeNotification } from '@modules/notification/notifications/new-promocode.notification';
+import { CreateReminderDto } from './dto/create-reminder.dto';
+import { ReminderEntity } from './entities/reminder.entity';
+import { ReminderNotification } from '@modules/notification/notifications/reminder.notification';
 
 @Injectable()
 export class EventService {
@@ -361,5 +364,48 @@ export class EventService {
 		});
 
 		return result;
+	}
+
+	async createReminder(
+		id: number,
+		{ time }: CreateReminderDto,
+		user: User
+	): Promise<ReminderEntity> {
+		const event = await this.findById(id);
+
+		const reminder = await this.prisma.reminder.create({
+			data: {
+				eventId: id,
+				userId: user.id,
+				time: new Date(time),
+			},
+		});
+
+		await this.notificationService.send(
+			user,
+			new ReminderNotification({
+				reminderId: reminder.id,
+				username: user.username,
+				eventTitle: event.title,
+				eventDate: new Date(event.startDate).toLocaleString(),
+			}),
+			{
+				delay: new Date(time).getTime() - Date.now(),
+			}
+		);
+
+		return reminder;
+	}
+
+	async removeReminder(eventId: number, reminderId: number, user: User): Promise<void> {
+		await this.prisma.reminder.delete({
+			where: {
+				id: reminderId,
+				eventId,
+				userId: user.id,
+			},
+		});
+
+		await this.notificationService.removeReminder(reminderId);
 	}
 }
