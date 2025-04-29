@@ -50,7 +50,7 @@ export class EventService {
 	}
 
 	async findById(id: number): Promise<EventEntity> {
-		return this.prisma.event.findUniqueOrThrow({
+		const event = await this.prisma.event.findUniqueOrThrow({
 			where: {
 				id,
 			},
@@ -66,6 +66,8 @@ export class EventService {
 				companyId: true,
 			},
 		});
+
+		return new EventEntity(event);
 	}
 
 	async findAll(
@@ -102,9 +104,9 @@ export class EventService {
 		});
 
 		return {
-			data: ids
-				.map((id) => result.find((e) => e.id === id))
-				.filter((e) => e !== undefined),
+			data: ids.map((id) => {
+				return new EventEntity(result.find((e) => e.id === id)!);
+			}),
 			meta: getPaginationMeta(count, page, limit),
 		};
 	}
@@ -133,9 +135,7 @@ export class EventService {
 			},
 		});
 
-		return ids
-			.map((id) => events.find((e) => e.id === id))
-			.filter((e) => e !== undefined);
+		return ids.map((id) => new EventEntity(events.find((e) => e.id === id)!));
 	}
 
 	async findComments(
@@ -261,6 +261,15 @@ export class EventService {
 			data: {
 				...dto,
 				eventId,
+			},
+		});
+	}
+
+	async findEventPromocode(eventId: number, code: string): Promise<PromocodeEntity> {
+		return this.prisma.promocode.findFirstOrThrow({
+			where: {
+				eventId,
+				code,
 			},
 		});
 	}

@@ -9,12 +9,12 @@ export class EventSortingOptionsDto {
 		type: String,
 		enum: SortFields,
 		example: SortFields.PRICE,
-		default: SortFields.CREATED_AT,
+		default: SortFields.PUBLISHED,
 		required: false,
 	})
 	@IsOptional()
 	@IsEnum(SortFields)
-	sort: SortFields = SortFields.CREATED_AT;
+	sort: SortFields = SortFields.PUBLISHED;
 
 	@ApiProperty({
 		type: String,

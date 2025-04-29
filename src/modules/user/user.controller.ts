@@ -32,7 +32,7 @@ import { FilteringOptionsDto, UpdateUserDto, UpdatePasswordDto } from './dto';
 import { CurrentUser, UploadedImage } from '@common/decorators';
 import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 
-@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
+@UseInterceptors(CacheInterceptor, ClassSerializerInterceptor)
 @SerializeOptions({ type: UserEntity })
 @Controller('users')
 export class UserController {
@@ -79,7 +79,11 @@ export class UserController {
 	@UseInterceptors(FileInterceptor('avatar'))
 	updateAvatar(
 		@Param('id', ParseIntPipe) id: number,
-		@UploadedImage() avatar: Express.Multer.File
+		@UploadedImage({
+			width: 400,
+			height: 400,
+		})
+		avatar: Express.Multer.File
 	): Promise<UserEntity> {
 		return this.userService.updateAvatar(id, avatar);
 	}

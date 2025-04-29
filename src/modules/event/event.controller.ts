@@ -14,6 +14,7 @@ import {
 	UseInterceptors,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
+
 import { Public } from '@common/decorators/public.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Paginated, PaginationOptionsDto } from '@common/pagination';
@@ -34,23 +35,25 @@ import {
 	ApiEventFindSimilar,
 	ApiReminderCreate,
 	ApiReminderRemove,
+	ApiEventFindPromocode,
 } from './decorators/api-event.decorator';
-import { CreateTicketDto } from './dto/create-ticket.dto';
-import { CreateEventTicketResponseDto } from './dto/create-event-ticket-response.dto';
-import { CreatePromocodeDto } from './dto/create-promocode.dto';
 import { PromocodeEntity } from './entities/promocode.entity';
-import { UpdatePromocodeDto } from './dto/update-promocode.dto';
 import {
 	EventFilteringOptionsDto,
 	EventSortingOptionsDto,
 	SimilarEventsQueryDto,
+	CreateTicketDto,
+	CreateEventTicketResponseDto,
+	CreatePromocodeDto,
+	UpdatePromocodeDto,
+	FindPromocodeDto,
 } from './dto';
 import { EventEntity } from './entities/event.entity';
 import { EventService } from './event.service';
 import { CreateReminderDto } from './dto/create-reminder.dto';
 import { ReminderEntity } from './entities/reminder.entity';
 
-@UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
+@UseInterceptors(CacheInterceptor, ClassSerializerInterceptor)
 @Controller('events')
 export class EventController {
 	constructor(private readonly eventService: EventService) {}
@@ -69,6 +72,15 @@ export class EventController {
 		@CurrentUser() user: User
 	): Promise<PromocodeEntity[]> {
 		return this.eventService.findEventPromocodes(id, user);
+	}
+
+	@ApiEventFindPromocode()
+	@Get(':id/promocodes/:code')
+	findEventPromocode(
+		@Param('id', ParseIntPipe) id: number,
+		@Param('code') { code }: FindPromocodeDto
+	): Promise<PromocodeEntity> {
+		return this.eventService.findEventPromocode(id, code);
 	}
 
 	@ApiEventFindById()

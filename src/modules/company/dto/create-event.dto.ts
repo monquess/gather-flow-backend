@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Format, Prisma, Theme, VisitorsVisibility } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
+	IsArray,
 	IsEnum,
 	IsInt,
 	IsISO8601,
@@ -10,9 +11,12 @@ import {
 	IsString,
 	Min,
 	Validate,
+	ValidateNested,
 } from 'class-validator';
+
 import { AfterDateValidator } from '../validators/after-date.validator';
 import { FutureDateValidator } from '../validators/future-date.validator';
+import { CreatePromocodeDto } from '@modules/event/dto';
 
 export class CreateEventDto {
 	@ApiProperty({
@@ -122,4 +126,22 @@ export class CreateEventDto {
 	})
 	@Validate(FutureDateValidator)
 	readonly publishDate?: Date;
+
+	@ApiProperty({
+		type: [CreatePromocodeDto],
+		example: [
+			{
+				code: 'SUMMER2023',
+				discount: 20,
+				expirationDate: '2025-03-09T16:17:53.019Z',
+			},
+		],
+		isArray: true,
+		required: false,
+	})
+	@IsOptional()
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => CreatePromocodeDto)
+	readonly promocodes: CreatePromocodeDto[] = [];
 }

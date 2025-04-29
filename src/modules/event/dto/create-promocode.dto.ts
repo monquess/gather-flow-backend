@@ -12,16 +12,16 @@ import { FutureDateValidator } from '../validators/future-date.validator';
 
 export class CreatePromocodeDto {
 	@ApiProperty({
-		example: 'SUMMER2023',
 		type: String,
+		example: 'SUMMER2023',
 	})
 	@IsNotEmpty()
 	@IsString()
 	code: string;
 
 	@ApiProperty({
-		example: 20,
 		type: Number,
+		example: 20,
 	})
 	@IsNotEmpty()
 	@IsInt()
@@ -30,8 +30,9 @@ export class CreatePromocodeDto {
 	discount: number;
 
 	@ApiProperty({
-		example: '2025-03-09T16:17:53.019Z',
 		type: String,
+		format: 'date-time',
+		example: '2025-03-09T16:17:53.019Z',
 	})
 	@IsISO8601({
 		strict: true,

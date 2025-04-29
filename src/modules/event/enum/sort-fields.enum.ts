@@ -1,7 +1,8 @@
 export enum SortFields {
 	TITLE = 'title',
-	START_DATE = 'startDate',
-	END_DATE = 'endDate',
+	START = 'startDate',
+	END = 'endDate',
+	PUBLISHED = 'publishDate',
 	CREATED_AT = 'createdAt',
 	PRICE = 'ticketPrice',
 }

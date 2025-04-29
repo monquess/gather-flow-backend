@@ -1,3 +1,4 @@
+import { UploadedImageOptions } from '@common/decorators';
 import {
 	PipeTransform,
 	Injectable,
@@ -11,6 +12,8 @@ import * as sharp from 'sharp';
 export class ImageTransformPipe
 	implements PipeTransform<Express.Multer.File, Promise<Express.Multer.File | undefined>>
 {
+	constructor(private readonly options: UploadedImageOptions) {}
+
 	async transform(
 		image: Express.Multer.File | undefined,
 		_metadata: ArgumentMetadata
@@ -22,8 +25,7 @@ export class ImageTransformPipe
 		try {
 			const buffer = await sharp(image.buffer)
 				.resize({
-					width: 400,
-					height: 400,
+					...this.options,
 					fit: sharp.fit.cover,
 				})
 				.webp({ effort: 3, lossless: true })
@@ -31,7 +33,7 @@ export class ImageTransformPipe
 
 			return {
 				...image,
-				buffer: buffer,
+				buffer,
 				mimetype: 'image/webp',
 				size: buffer.length,
 				originalname: image.originalname.replace(/\.\w+$/, '.webp'),

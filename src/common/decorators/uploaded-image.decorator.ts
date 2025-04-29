@@ -6,7 +6,12 @@ import {
 } from '@nestjs/common';
 import { ImageTransformPipe } from '@modules/s3/pipes/image-transform.pipe';
 
-export const UploadedImage = () =>
+export interface UploadedImageOptions {
+	width?: number;
+	height?: number;
+}
+
+export const UploadedImage = (options: UploadedImageOptions = {}) =>
 	UploadedFile(
 		new ParseFilePipe({
 			validators: [
@@ -18,5 +23,5 @@ export const UploadedImage = () =>
 			],
 			fileIsRequired: false,
 		}),
-		new ImageTransformPipe()
+		new ImageTransformPipe(options)
 	);

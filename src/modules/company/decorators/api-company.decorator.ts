@@ -89,7 +89,7 @@ export const ApiEventCreate = () =>
 		ApiAuth(),
 		ApiOperation({ summary: 'Create event' }),
 		ApiParam({
-			name: 'id',
+			name: 'companyId',
 			description: 'Company id',
 		}),
 		ApiCreatedResponse({
