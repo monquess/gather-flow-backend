@@ -182,8 +182,11 @@ export class CompanyService {
 			},
 		});
 
+		console.log(result);
+
 		return {
 			data: ids.map((id) => {
+				console.log(result.find((e) => e.id === id));
 				return new EventEntity(result.find((e) => e.id === id)!);
 			}),
 			meta: getPaginationMeta(count, page, limit),
@@ -260,6 +263,11 @@ export class CompanyService {
 					companyId,
 					poster: posterUrl,
 					status: dto.publishDate ? EventStatus.DRAFT : EventStatus.PUBLISHED,
+					promocodes: {
+						createMany: {
+							data: dto.promocodes,
+						},
+					},
 				},
 			});
 			await this.eventSearchService.index(newEvent);
@@ -454,20 +462,6 @@ export class CompanyService {
 				await job.remove();
 			}
 		});
-	}
-
-	async checkIsCompanyAdmin(userId: number, companyId?: number): Promise<void> {
-		if (!companyId) {
-			throw new NotFoundException('Company not found');
-		}
-
-		const company = await this.findById(companyId);
-
-		const membership = company.users?.find((u) => u.user.id === userId);
-
-		if (membership?.role !== CompanyRole.ADMIN) {
-			throw new ForbiddenException('Access denied');
-		}
 	}
 
 	async findPosts(
@@ -734,5 +728,19 @@ export class CompanyService {
 				rating: Math.round((_avg.stars ?? 0) * 10) / 10,
 			},
 		});
+	}
+
+	async checkIsCompanyAdmin(userId: number, companyId?: number): Promise<void> {
+		if (!companyId) {
+			throw new NotFoundException('Company not found');
+		}
+
+		const company = await this.findById(companyId);
+
+		const membership = company.users?.find((u) => u.user.id === userId);
+
+		if (membership?.role !== CompanyRole.ADMIN) {
+			throw new ForbiddenException('Access denied');
+		}
 	}
 }

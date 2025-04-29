@@ -79,7 +79,11 @@ export class UserController {
 	@UseInterceptors(FileInterceptor('avatar'))
 	updateAvatar(
 		@Param('id', ParseIntPipe) id: number,
-		@UploadedImage() avatar: Express.Multer.File
+		@UploadedImage({
+			width: 400,
+			height: 400,
+		})
+		avatar: Express.Multer.File
 	): Promise<UserEntity> {
 		return this.userService.updateAvatar(id, avatar);
 	}

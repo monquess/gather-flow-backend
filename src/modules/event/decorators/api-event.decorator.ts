@@ -9,6 +9,7 @@ import {
 	ApiOperation,
 	ApiParam,
 } from '@nestjs/swagger';
+
 import { ApiPaginatedResponse } from '@common/pagination';
 import { CommentEntity } from '@modules/comment/entities/comment.entity';
 import { CreateCommentDto } from '@modules/comment/dto';
@@ -63,7 +64,7 @@ export const ApiEventCreateComment = () =>
 			type: CommentEntity,
 		}),
 		ApiNotFoundResponse({
-			description: 'Comment not found',
+			description: 'Event not found',
 		})
 	);
 
@@ -84,13 +85,13 @@ export const ApiEventFindPromocodes = () =>
 		ApiOperation({ summary: 'Get event promocodes' }),
 		ApiParam({
 			name: 'id',
-			description: 'event id',
+			description: 'Event id',
 		}),
 		ApiOkResponse({
 			type: [PromocodeEntity],
 		}),
 		ApiNotFoundResponse({
-			description: 'Record not found',
+			description: 'Event not found',
 		}),
 		ApiForbiddenResponse({
 			description: 'Access denied',
@@ -103,7 +104,7 @@ export const ApiEventCreateTicket = () =>
 		ApiOperation({ summary: 'Create event ticket' }),
 		ApiParam({
 			name: 'id',
-			description: 'event id',
+			description: 'Event id',
 		}),
 		ApiCreatedResponse({ type: CreateEventTicketResponseDto }),
 		ApiBadRequestResponse({
@@ -120,11 +121,11 @@ export const ApiEventCreatePromocode = () =>
 		ApiOperation({ summary: 'Create event promocode' }),
 		ApiParam({
 			name: 'id',
-			description: 'event id',
+			description: 'Event id',
 		}),
 		ApiCreatedResponse({ type: PromocodeEntity }),
 		ApiNotFoundResponse({
-			description: 'Record not found',
+			description: 'Event not found',
 		}),
 		ApiForbiddenResponse({
 			description: 'Access denied',
@@ -137,17 +138,37 @@ export const ApiEventUpdatePromocode = () =>
 		ApiOperation({ summary: 'Update event promocode' }),
 		ApiParam({
 			name: 'eventId',
-			description: 'event id',
+			description: 'Event id',
 		}),
 		ApiParam({
 			name: 'promocodeId',
-			description: 'promocode id',
+			description: 'Promocode id',
 		}),
 		ApiOkResponse({ type: PromocodeEntity }),
 		ApiNotFoundResponse({
-			description: 'Record not found',
+			description: 'Promocode not found',
 		}),
 		ApiForbiddenResponse({
 			description: 'Access denied',
+		})
+	);
+
+export const ApiEventFindPromocode = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Get event promocode' }),
+		ApiParam({
+			name: 'eventId',
+			description: 'Event id',
+		}),
+		ApiParam({
+			name: 'code',
+		}),
+		ApiOkResponse({ type: PromocodeEntity }),
+		ApiNotFoundResponse({
+			description: 'Event not found',
+		}),
+		ApiNotFoundResponse({
+			description: 'Promocode not found',
 		})
 	);

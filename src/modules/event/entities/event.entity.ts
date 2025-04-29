@@ -5,8 +5,8 @@ import { CompanyEntity } from '@modules/company/entities/company.entity';
 
 export class EventEntity {
 	@ApiProperty({
-		example: 1,
 		type: Number,
+		example: 1,
 	})
 	id: number;
 
@@ -21,14 +21,15 @@ export class EventEntity {
 	company?: Pick<CompanyEntity, 'id' | 'name'>;
 
 	@ApiProperty({
-		example: 'Tech Conference',
 		type: String,
+		example: 'Tech Conference',
 	})
 	title: string;
 
 	@ApiProperty({
-		example: 'About event...',
 		type: String,
+		example: 'About event...',
+		nullable: true,
 	})
 	description?: string | null;
 
@@ -47,14 +48,14 @@ export class EventEntity {
 	theme: Theme;
 
 	@ApiProperty({
-		example: 'United States Minnesota 46702 Jaydon Plains',
 		type: String,
+		example: 'United States Minnesota 46702 Jaydon Plains',
 	})
 	location: string;
 
 	@ApiProperty({
-		example: 19.25,
 		type: Number,
+		example: 19.25,
 	})
 	@Transform(({ value }: { value: unknown }) => {
 		if (typeof value === 'string') {
@@ -65,20 +66,20 @@ export class EventEntity {
 	ticketPrice: Prisma.Decimal;
 
 	@ApiProperty({
-		example: 100,
 		type: Number,
+		example: 100,
 	})
 	ticketsQuantity: number;
 
 	@ApiProperty({
-		example: 100,
 		type: Number,
+		example: 100,
 	})
 	ticketsSold: number;
 
 	@ApiProperty({
-		example: 'https://s3.com/posters/default.webp',
 		type: String,
+		example: 'https://s3.com/posters/default.webp',
 	})
 	poster: string;
 
@@ -90,26 +91,32 @@ export class EventEntity {
 	visitorsVisibility: VisitorsVisibility;
 
 	@ApiProperty({
-		example: '2025-03-09T16:17:53.019Z',
 		type: String,
+		format: 'date-time',
+		example: '2025-03-09T16:17:53.019Z',
 	})
 	startDate: Date;
 
 	@ApiProperty({
-		example: '2025-03-09T16:17:53.019Z',
 		type: String,
+		format: 'date-time',
+		example: '2025-03-09T16:17:53.019Z',
+		nullable: true,
 	})
 	endDate?: Date | null;
 
 	@ApiProperty({
-		example: '2025-03-09T16:17:53.019Z',
 		type: String,
+		format: 'date-time',
+		example: '2025-03-09T16:17:53.019Z',
+		nullable: true,
 	})
 	publishDate?: Date | null;
 
 	@ApiProperty({
-		example: '2025-03-09T16:17:53.019Z',
 		type: String,
+		format: 'date-time',
+		example: '2025-03-09T16:17:53.019Z',
 	})
 	createdAt: Date;
 
