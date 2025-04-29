@@ -4,18 +4,18 @@ import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateTicketDto {
 	@ApiProperty({
-		example: 100,
 		type: Number,
+		example: 100,
 	})
 	@IsNotEmpty()
-	@Transform(({ value }) => parseInt(value))
+	@Transform(({ value }: { value: string }) => parseInt(value))
 	@IsInt()
 	@Min(1)
 	quantity: number;
 
 	@ApiProperty({
-		example: 'V1StGXR8_Z5jdHi6B-myT',
 		type: String,
+		example: 'V1StGXR8_Z5jdHi6B-myT',
 	})
 	@IsOptional()
 	@IsString()

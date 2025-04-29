@@ -238,6 +238,15 @@ export class EventService {
 		});
 	}
 
+	async findEventPromocode(eventId: number, code: string): Promise<PromocodeEntity> {
+		return this.prisma.promocode.findFirstOrThrow({
+			where: {
+				eventId,
+				code,
+			},
+		});
+	}
+
 	async findEventPromocodes(eventId: number, user: User): Promise<PromocodeEntity[]> {
 		const event = await this.findById(eventId);
 		await this.companyService.checkIsCompanyAdmin(user.id, event.company?.id);

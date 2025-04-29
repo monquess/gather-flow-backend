@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CompanyMemberEntity } from './company-member.entity';
+import { Exclude } from 'class-transformer';
 
 export class CompanyEntity {
 	@ApiProperty({
@@ -36,6 +37,7 @@ export class CompanyEntity {
 		example: 'acct_1RH07qEsghv2SxON',
 		type: String,
 	})
+	@Exclude()
 	stripeAccountId?: string | null;
 
 	@ApiProperty({
