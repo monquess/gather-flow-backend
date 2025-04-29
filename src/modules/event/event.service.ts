@@ -24,6 +24,9 @@ import { Paginated } from '@common/pagination/paginated';
 import { getPaginationMeta } from '@common/pagination/paginated-metadata';
 import { CreateCommentDto } from '@modules/comment/dto';
 import { CommentEntity } from '@modules/comment/entities/comment.entity';
+import { NotificationService } from '@modules/notification/notification.service';
+import { SubscriptionService } from '@modules/subscription/subscription.service';
+import { NewPromocodeNotification } from '@modules/notification/notifications/new-promocode.notification';
 
 @Injectable()
 export class EventService {
@@ -33,7 +36,9 @@ export class EventService {
 		private readonly ticketService: TicketService,
 		@Inject(forwardRef(() => CompanyService))
 		private readonly companyService: CompanyService,
-		private readonly searchService: EventSearchService
+		private readonly searchService: EventSearchService,
+		private readonly notificationService: NotificationService,
+		private readonly subscriptionService: SubscriptionService
 	) {}
 
 	async index(): Promise<void> {
@@ -208,14 +213,33 @@ export class EventService {
 		user: User
 	): Promise<PromocodeEntity> {
 		const event = await this.findById(eventId);
-		await this.companyService.checkIsCompanyAdmin(user.id, event.company?.id);
+		const company = await this.companyService.checkIsCompanyAdmin(
+			user.id,
+			event.company?.id
+		);
 
-		return this.prisma.promocode.create({
+		const promocode = await this.prisma.promocode.create({
 			data: {
 				...dto,
 				eventId,
 			},
 		});
+
+		const subscribers = await this.subscriptionService.findAll({
+			companyId: event.company?.id,
+		});
+
+		await this.notificationService.send(
+			subscribers.map((s) => s.user) as User[],
+			new NewPromocodeNotification({
+				companyName: company.name,
+				promocodeCode: promocode.code,
+				promocodeDiscount: promocode.discount,
+				eventTitle: event.title,
+			})
+		);
+
+		return promocode;
 	}
 
 	async updateEventPromocode(

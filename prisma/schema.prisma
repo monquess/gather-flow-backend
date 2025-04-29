@@ -19,12 +19,13 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  companies CompanyMember[]
-  comments  Comment[]
-  likes     Like[]
-  reviews   Review[]
-  tickets   Ticket[]
-  payments  Payment[]
+  companies     CompanyMember[]
+  comments      Comment[]
+  likes         Like[]
+  reviews       Review[]
+  tickets       Ticket[]
+  payments      Payment[]
+  subscriptions CompanySubscription[]
 
   @@map("users")
 }
@@ -39,10 +40,11 @@ model Company {
   stripeAccountId String?  @map("stripe_account_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
-  users   CompanyMember[]
-  events  Event[]
-  posts   Post[]
-  reviews Review[]
+  users       CompanyMember[]
+  events      Event[]
+  posts       Post[]
+  reviews     Review[]
+  subscribers CompanySubscription[]
 
   @@map("companies")
 }
@@ -202,6 +204,18 @@ model Review {
 
   @@id([authorId, companyId])
   @@map("reviews")
+}
+
+model CompanySubscription {
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int     @map("user_id")
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int     @map("company_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, companyId])
+  @@map("company_subscriptions")
 }
 
 enum Provider {

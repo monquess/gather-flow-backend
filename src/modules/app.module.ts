@@ -22,6 +22,7 @@ import {
 } from './config/factories';
 import { SearchModule } from './search/search.module';
 import { PostModule } from './post/post.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 @Module({
 	imports: [
@@ -58,6 +59,7 @@ import { PostModule } from './post/post.module';
 		SearchModule,
 		CommentModule,
 		PostModule,
+		SubscriptionModule,
 	],
 	providers: [
 		{
