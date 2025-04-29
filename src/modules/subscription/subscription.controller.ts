@@ -16,11 +16,17 @@ import { CompanySubscriptionFilteringOptionsDto } from './dto/filtering-options.
 import { CompanySubscriptionEntity } from './entities/company-subscription.entity';
 import { CreateCompanySubscriptionDto } from './dto/create-company-subscription.dto';
 import { User } from '@prisma/client';
+import {
+	ApiCompanySubscriptionCreate,
+	ApiCompanySubscriptionFindAll,
+	ApiCompanySubscriptionRemove,
+} from './decorators/api-subscription.decorator';
 
 @Controller('company-subscriptions')
 export class SubscriptionController {
 	constructor(private readonly subscriptionService: SubscriptionService) {}
 
+	@ApiCompanySubscriptionFindAll()
 	@Public()
 	@Get()
 	findAll(
@@ -29,6 +35,7 @@ export class SubscriptionController {
 		return this.subscriptionService.findAll(filteringOptions);
 	}
 
+	@ApiCompanySubscriptionCreate()
 	@Post()
 	create(
 		@Body() createCompanySubscriptionDto: CreateCompanySubscriptionDto,
@@ -37,6 +44,7 @@ export class SubscriptionController {
 		return this.subscriptionService.create(createCompanySubscriptionDto, user);
 	}
 
+	@ApiCompanySubscriptionRemove()
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@Delete(':companyId')
 	remove(
