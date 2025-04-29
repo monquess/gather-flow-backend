@@ -38,6 +38,10 @@ import { PostEntity } from '@modules/post/entities/post.entity';
 import { SortFields } from '@modules/post/enum/sort-fields.enum';
 import { PostService } from '@modules/post/post.service';
 import { ReviewEntity } from './entities/review.entity';
+import { SubscriptionService } from '@modules/subscription/subscription.service';
+import { NotificationService } from '@modules/notification/notification.service';
+import { NewEventNotification } from '@modules/notification/notifications/new-event.notification';
+import { NewPostNotification } from '@modules/notification/notifications/new-post.notification';
 
 @Injectable()
 export class CompanyService {
@@ -50,6 +54,9 @@ export class CompanyService {
 		@Inject(forwardRef(() => EventService))
 		private readonly eventService: EventService,
 		private readonly eventSearchService: EventSearchService,
+		@Inject(forwardRef(() => SubscriptionService))
+		private readonly subscriptionService: SubscriptionService,
+		private readonly notificationService: NotificationService,
 		@InjectQueue('publishEvent')
 		private readonly publishQueue: Queue
 	) {}
@@ -245,7 +252,7 @@ export class CompanyService {
 		user: User,
 		poster?: Express.Multer.File
 	): Promise<EventEntity> {
-		await this.checkIsCompanyAdmin(user.id, companyId);
+		const company = await this.checkIsCompanyAdmin(user.id, companyId);
 
 		let posterUrl = this.config.defaults.poster;
 		if (poster) {
@@ -278,6 +285,18 @@ export class CompanyService {
 
 			return newEvent;
 		});
+
+		const subscribers = await this.subscriptionService.findAll({
+			companyId,
+		});
+
+		await this.notificationService.send(
+			subscribers.map((s) => s.user) as User[],
+			new NewEventNotification({
+				companyName: company.name,
+				eventTitle: event.title,
+			})
+		);
 
 		return event;
 	}
@@ -456,7 +475,7 @@ export class CompanyService {
 		});
 	}
 
-	async checkIsCompanyAdmin(userId: number, companyId?: number): Promise<void> {
+	async checkIsCompanyAdmin(userId: number, companyId?: number): Promise<CompanyEntity> {
 		if (!companyId) {
 			throw new NotFoundException('Company not found');
 		}
@@ -468,6 +487,8 @@ export class CompanyService {
 		if (membership?.role !== CompanyRole.ADMIN) {
 			throw new ForbiddenException('Access denied');
 		}
+
+		return company;
 	}
 
 	async findPosts(
@@ -520,7 +541,7 @@ export class CompanyService {
 		user: User,
 		poster?: Express.Multer.File
 	): Promise<PostEntity> {
-		await this.checkIsCompanyAdmin(user.id, companyId);
+		const company = await this.checkIsCompanyAdmin(user.id, companyId);
 
 		let posterUrl = this.config.defaults.poster;
 		if (poster) {
@@ -535,6 +556,18 @@ export class CompanyService {
 				poster: posterUrl,
 			},
 		});
+
+		const subscribers = await this.subscriptionService.findAll({
+			companyId,
+		});
+
+		await this.notificationService.send(
+			subscribers.map((s) => s.user) as User[],
+			new NewPostNotification({
+				companyName: company.name,
+				postTitle: post.title,
+			})
+		);
 
 		return {
 			...post,

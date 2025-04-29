@@ -2,7 +2,10 @@ import {
 	Body,
 	ClassSerializerInterceptor,
 	Controller,
+	Delete,
 	Get,
+	HttpCode,
+	HttpStatus,
 	Param,
 	ParseIntPipe,
 	Patch,
@@ -29,6 +32,8 @@ import {
 	ApiEventUpdatePromocode,
 	ApiEventFindComments,
 	ApiEventFindSimilar,
+	ApiReminderCreate,
+	ApiReminderRemove,
 } from './decorators/api-event.decorator';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { CreateEventTicketResponseDto } from './dto/create-event-ticket-response.dto';
@@ -42,6 +47,8 @@ import {
 } from './dto';
 import { EventEntity } from './entities/event.entity';
 import { EventService } from './event.service';
+import { CreateReminderDto } from './dto/create-reminder.dto';
+import { ReminderEntity } from './entities/reminder.entity';
 
 @UseInterceptors(ClassSerializerInterceptor, CacheInterceptor)
 @Controller('events')
@@ -146,5 +153,26 @@ export class EventController {
 		@CurrentUser() user: User
 	): Promise<CommentEntity> {
 		return this.eventService.createComment(id, dto, user);
+	}
+
+	@ApiReminderCreate()
+	@Post(':id/reminders')
+	createReminder(
+		@Param('id', ParseIntPipe) id: number,
+		@Body() dto: CreateReminderDto,
+		@CurrentUser() user: User
+	): Promise<ReminderEntity> {
+		return this.eventService.createReminder(id, dto, user);
+	}
+
+	@ApiReminderRemove()
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@Delete(':eventId/reminder/:reminderId')
+	removeReminder(
+		@Param('eventId', ParseIntPipe) eventId: number,
+		@Param('reminderId', ParseIntPipe) reminderId: number,
+		@CurrentUser() user: User
+	): Promise<void> {
+		return this.eventService.removeReminder(eventId, reminderId, user);
 	}
 }
