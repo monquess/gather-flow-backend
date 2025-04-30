@@ -15,6 +15,12 @@ export class CommentEntity {
 	content: string;
 
 	@ApiProperty({
+		type: Number,
+		example: 1,
+	})
+	eventId: number;
+
+	@ApiProperty({
 		type: PickType(UserEntity, ['id', 'username', 'avatar']),
 		example: {
 			id: 1,

@@ -11,13 +11,14 @@ import {
 	UseInterceptors,
 	ClassSerializerInterceptor,
 	Query,
+	Post,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 
-import { UpdateCommentDto } from './dto';
+import { CreateCommentDto, UpdateCommentDto } from './dto';
 import { CommentEntity } from './entities/comment.entity';
 import { CommentService } from './comment.service';
 import {
@@ -25,6 +26,7 @@ import {
 	ApiCommentRemove,
 	ApiCommentFindById,
 	ApiCommentFindReplies,
+	ApiCommentReply,
 } from './decorators/api-comment.decorator';
 import { Paginated } from '@common/pagination/paginated';
 import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
@@ -50,6 +52,16 @@ export class CommentController {
 		@Query() paginationOptions: PaginationOptionsDto
 	): Promise<Paginated<CommentEntity>> {
 		return this.commentService.findReplies(id, paginationOptions);
+	}
+
+	@ApiCommentReply()
+	@Post(':id/replies')
+	reply(
+		@Param('id') id: number,
+		@Body() dto: CreateCommentDto,
+		@CurrentUser() user: User
+	): Promise<CommentEntity> {
+		return this.commentService.reply(id, dto, user);
 	}
 
 	@ApiCommentUpdate()

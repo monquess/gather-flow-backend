@@ -162,6 +162,9 @@ export class EventService {
 				omit: {
 					authorId: true,
 				},
+				orderBy: {
+					createdAt: 'desc',
+				},
 			}),
 			this.prisma.comment.count({ where }),
 		]);
@@ -242,7 +245,10 @@ export class EventService {
 		return this.prisma.promocode.findFirstOrThrow({
 			where: {
 				eventId,
-				code,
+				code: {
+					equals: code,
+					mode: 'insensitive',
+				},
 			},
 		});
 	}

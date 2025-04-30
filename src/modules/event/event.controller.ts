@@ -30,7 +30,6 @@ import {
 	ApiEventUpdatePromocode,
 	ApiEventFindComments,
 	ApiEventFindSimilar,
-	ApiEventFindPromocode,
 } from './decorators/api-event.decorator';
 import { PromocodeEntity } from './entities/promocode.entity';
 import {
@@ -67,13 +66,12 @@ export class EventController {
 		return this.eventService.findEventPromocodes(id, user);
 	}
 
-	@ApiEventFindPromocode()
 	@Get(':id/promocodes/:code')
 	findEventPromocode(
 		@Param('id', ParseIntPipe) id: number,
-		@Param('code') { code }: FindPromocodeDto
+		@Param() params: FindPromocodeDto
 	): Promise<PromocodeEntity> {
-		return this.eventService.findEventPromocode(id, code);
+		return this.eventService.findEventPromocode(id, params.code);
 	}
 
 	@ApiEventFindById()

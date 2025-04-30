@@ -6,6 +6,7 @@ import { PrismaService } from '@modules/prisma/prisma.service';
 import { getPaginationMeta } from '@common/pagination/paginated-metadata';
 import { Paginated } from '@common/pagination/paginated';
 import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
+import { CreateCommentDto } from './dto';
 
 @Injectable()
 export class CommentService {
@@ -67,6 +68,9 @@ export class CommentService {
 				},
 				skip: (page - 1) * limit,
 				take: limit,
+				orderBy: {
+					createdAt: 'desc',
+				},
 			}),
 			this.prisma.comment.count({ where }),
 		]);
@@ -78,6 +82,31 @@ export class CommentService {
 			})),
 			meta: getPaginationMeta(count, page, limit),
 		};
+	}
+
+	async reply(id: number, dto: CreateCommentDto, user: User): Promise<CommentEntity> {
+		const comment = await this.findById(id);
+
+		return this.prisma.comment.create({
+			data: {
+				...dto,
+				authorId: user.id,
+				parentId: id,
+				eventId: comment.eventId,
+			},
+			include: {
+				author: {
+					select: {
+						id: true,
+						username: true,
+						avatar: true,
+					},
+				},
+			},
+			omit: {
+				authorId: true,
+			},
+		});
 	}
 
 	async update(id: number, dto: UpdateCommentDto, user: User): Promise<CommentEntity> {
