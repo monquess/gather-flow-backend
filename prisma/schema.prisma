@@ -19,12 +19,15 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  companies CompanyMember[]
-  comments  Comment[]
-  likes     Like[]
-  reviews   Review[]
-  tickets   Ticket[]
-  payments  Payment[]
+  companies     CompanyMember[]
+  comments      Comment[]
+  likes         Like[]
+  reviews       Review[]
+  tickets       Ticket[]
+  payments      Payment[]
+  subscriptions CompanySubscription[]
+  notifications Notification[]
+  reminders     Reminder[]
 
   @@map("users")
 }
@@ -39,10 +42,11 @@ model Company {
   stripeAccountId String?  @map("stripe_account_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
-  users   CompanyMember[]
-  events  Event[]
-  posts   Post[]
-  reviews Review[]
+  users       CompanyMember[]
+  events      Event[]
+  posts       Post[]
+  reviews     Review[]
+  subscribers CompanySubscription[]
 
   @@map("companies")
 }
@@ -106,10 +110,10 @@ model Event {
   company            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   companyId          Int                @map("company_id")
 
-  comments Comment[]
-
+  comments   Comment[]
   tickets    Ticket[]
   promocodes Promocode[]
+  reminders  Reminder[]
 
   @@map("events")
 }
@@ -204,6 +208,43 @@ model Review {
   @@map("reviews")
 }
 
+model CompanySubscription {
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int     @map("user_id")
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int     @map("company_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, companyId])
+  @@map("company_subscriptions")
+}
+
+model Notification {
+  id      Int              @id @default(autoincrement())
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  Int              @map("user_id")
+  message String           @db.Text
+  isRead  Boolean          @default(false)
+  type    NotificationType
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model Reminder {
+  id      Int      @id @default(autoincrement())
+  eventId Int      @map("event_id")
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  Int      @map("user_id")
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  time    DateTime
+
+  @@unique([eventId, userId, time])
+  @@map("reminders")
+}
+
 enum Provider {
   LOCAL
   GOOGLE
@@ -243,4 +284,12 @@ enum PaymentStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+enum NotificationType {
+  EVENT_REMINDER
+  NEW_EVENT
+  NEW_POST
+  NEW_PROMOCODE
+  NEW_ATTENDEE
 }

@@ -8,6 +8,7 @@ import {
 	ApiOkResponse,
 	ApiOperation,
 	ApiParam,
+	ApiNoContentResponse,
 } from '@nestjs/swagger';
 
 import { ApiPaginatedResponse } from '@common/pagination';
@@ -17,6 +18,7 @@ import { EventEntity } from '../entities/event.entity';
 import { ApiAuth } from '@common/decorators/swagger/api-auth.decorator';
 import { CreateEventTicketResponseDto } from '../dto/create-event-ticket-response.dto';
 import { PromocodeEntity } from '../entities/promocode.entity';
+import { ReminderEntity } from '../entities/reminder.entity';
 
 export const ApiEventFindAll = () =>
 	applyDecorators(
@@ -132,6 +134,20 @@ export const ApiEventCreatePromocode = () =>
 		})
 	);
 
+export const ApiReminderCreate = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Create reminder for event' }),
+		ApiParam({
+			name: 'id',
+			description: 'event id',
+		}),
+		ApiOkResponse({ type: ReminderEntity }),
+		ApiNotFoundResponse({
+			description: 'Event not found',
+		})
+	);
+
 export const ApiEventUpdatePromocode = () =>
 	applyDecorators(
 		ApiAuth(),
@@ -150,6 +166,24 @@ export const ApiEventUpdatePromocode = () =>
 		}),
 		ApiForbiddenResponse({
 			description: 'Access denied',
+		})
+	);
+
+export const ApiReminderRemove = () =>
+	applyDecorators(
+		ApiAuth(),
+		ApiOperation({ summary: 'Remove reminder for event' }),
+		ApiParam({
+			name: 'eventId',
+			description: 'event id',
+		}),
+		ApiParam({
+			name: 'reminderId',
+			description: 'reminder id',
+		}),
+		ApiNoContentResponse(),
+		ApiNotFoundResponse({
+			description: 'Event not found',
 		})
 	);
 
