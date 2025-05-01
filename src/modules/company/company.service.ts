@@ -285,6 +285,7 @@ export class CompanyService {
 				data: {
 					...dto,
 					companyId,
+					userId: user.id,
 					poster: posterUrl,
 					status: dto.publishDate ? EventStatus.DRAFT : EventStatus.PUBLISHED,
 					promocodes: {

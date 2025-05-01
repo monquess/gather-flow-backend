@@ -3,6 +3,7 @@ import { Format, Prisma, Theme, VisitorsVisibility } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
 	IsArray,
+	IsBoolean,
 	IsEnum,
 	IsInt,
 	IsISO8601,
@@ -90,6 +91,15 @@ export class CreateEventDto {
 	})
 	@IsEnum(VisitorsVisibility)
 	readonly visitorsVisibility: VisitorsVisibility;
+
+	@ApiProperty({
+		type: Boolean,
+		example: false,
+	})
+	@Transform(({ value }) => Boolean(value))
+	@IsBoolean()
+	@IsOptional()
+	readonly notifyOnAttendee?: boolean;
 
 	@ApiProperty({
 		type: String,

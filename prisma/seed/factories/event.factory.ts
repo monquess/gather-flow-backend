@@ -6,22 +6,26 @@ import {
 	Format,
 	Prisma,
 	Theme,
+	User,
 	VisitorsVisibility,
 } from '@prisma/client';
 import Factory from './abstract.factory';
 
 class EventFactory extends Factory<Event> {
 	private companies: Company[];
+	private users: User[];
 
-	constructor(count: number = 10, companies: Company[] = []) {
+	constructor(count: number = 10, companies: Company[] = [], users: User[] = []) {
 		super(count);
 		this.companies = companies;
+		this.users = users;
 		this.create();
 	}
 
 	create() {
 		for (let i = 0; i < this._count; i++) {
 			const company = faker.helpers.arrayElement(this.companies);
+			const user = faker.helpers.arrayElement(this.users);
 
 			const startDate = faker.date.soon({ days: 30 });
 			const endDate = faker.date.soon({ days: 5, refDate: startDate });
@@ -44,6 +48,7 @@ class EventFactory extends Factory<Event> {
 				endDate,
 				publishDate,
 				companyId: company.id,
+				userId: user.id,
 			} as Event);
 		}
 	}

@@ -9,6 +9,7 @@ import {
 	Validate,
 } from 'class-validator';
 import { FutureDateValidator } from '../validators/future-date.validator';
+import { Type } from 'class-transformer';
 
 export class CreatePromocodeDto {
 	@ApiProperty({
@@ -23,7 +24,7 @@ export class CreatePromocodeDto {
 		type: Number,
 		example: 20,
 	})
-	@IsNotEmpty()
+	@Type(() => Number)
 	@IsInt()
 	@Min(1)
 	@Max(100)

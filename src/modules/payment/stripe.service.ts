@@ -15,6 +15,8 @@ import { TicketService } from '@modules/ticket/ticket.service';
 import { MailService } from '@modules/mail/mail.service';
 import { StripeConfig, stripeConfig } from '@modules/config/configs/stripe.config';
 import { AppConfig, appConfig } from '@modules/config/configs';
+import { NotificationService } from '@modules/notification/notification.service';
+import { NewAttendeeNotification } from '@modules/notification/notifications/new-attendee.notification';
 
 @Injectable()
 export class StripeService {
@@ -29,7 +31,8 @@ export class StripeService {
 		@Inject(stripeConfig.KEY)
 		private readonly stripeConfig: ConfigType<StripeConfig>,
 		@Inject(appConfig.KEY)
-		private readonly appConfig: ConfigType<AppConfig>
+		private readonly appConfig: ConfigType<AppConfig>,
+		private readonly notificationService: NotificationService
 	) {
 		this.stripe = new Stripe(stripeConfig.secretKey);
 	}
@@ -121,6 +124,7 @@ export class StripeService {
 
 	async handleCheckoutCompleted(paymentIntent: Stripe.PaymentIntent): Promise<void> {
 		const ticketIds = paymentIntent.metadata.ticketIds?.split(',').map(Number);
+		const userId = Number(paymentIntent.metadata.userId);
 
 		const ticketPdfs = await Promise.all(
 			ticketIds.map((ticketId) => this.ticketService.generateTicketPdf(ticketId))
@@ -141,6 +145,21 @@ export class StripeService {
 			templateName: 'event-ticket',
 			attachments: ticketPdfs,
 		});
+
+		const user = await this.prisma.user.findUnique({
+			where: {
+				id: userId,
+			},
+		});
+
+		if (!user) return;
+
+		await this.notificationService.send(
+			user,
+			new NewAttendeeNotification({
+				eventTitle: paymentIntent.metadata.eventTitle,
+			})
+		);
 	}
 
 	async handleCheckoutExpired(paymentIntent: Stripe.PaymentIntent): Promise<void> {
