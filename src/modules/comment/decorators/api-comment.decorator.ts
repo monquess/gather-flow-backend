@@ -75,6 +75,7 @@ export const ApiCommentRemove = () =>
 
 export const ApiCommentReply = () =>
 	applyDecorators(
+		ApiAuth(),
 		ApiOperation({ summary: 'Reply to comment by id' }),
 		ApiOkResponse({
 			type: CommentEntity,

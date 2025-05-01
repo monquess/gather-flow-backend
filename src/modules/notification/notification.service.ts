@@ -48,8 +48,14 @@ export class NotificationService {
 		user: User
 	): Promise<Paginated<NotificationEntity>> {
 		const where: Prisma.NotificationWhereInput = {
-			userId: user.id,
-			isRead,
+			AND: [
+				{
+					userId: user.id,
+				},
+				{
+					isRead: isRead,
+				},
+			],
 		};
 
 		const [notifications, count] = await this.prisma.$transaction([
@@ -57,6 +63,7 @@ export class NotificationService {
 				where,
 				take: limit,
 				skip: (page - 1) * limit,
+				orderBy: { createdAt: 'desc' },
 			}),
 			this.prisma.notification.count({
 				where,

@@ -8,6 +8,7 @@ import { Prisma, User } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import * as PDFDocument from 'pdfkit';
 import * as QRCode from 'qrcode';
+import { TicketPdfDto } from './dto/ticket-pdf.dto';
 
 @Injectable()
 export class TicketService {
@@ -46,9 +47,13 @@ export class TicketService {
 		});
 	}
 
-	async generateTicketPdf(
-		ticketId: number
-	): Promise<{ filename: string; content: Buffer }> {
+	async getTicketPdf(id: number, user: User): Promise<TicketPdfDto> {
+		await this.findById(id, user);
+
+		return this.generateTicketPdf(id);
+	}
+
+	async generateTicketPdf(ticketId: number): Promise<TicketPdfDto> {
 		const ticket = await this.prisma.ticket.findUniqueOrThrow({
 			where: { id: ticketId },
 			include: {

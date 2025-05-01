@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CompanyFilteringOptionsDto {
 	@ApiProperty({
@@ -11,4 +12,14 @@ export class CompanyFilteringOptionsDto {
 	@IsString()
 	@IsNotEmpty()
 	readonly name?: string;
+
+	@ApiProperty({
+		type: Number,
+		example: 1,
+		required: false,
+	})
+	@IsOptional()
+	@Transform(({ value }) => Number(value))
+	@IsInt()
+	readonly userId?: number;
 }

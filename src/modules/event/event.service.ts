@@ -431,6 +431,7 @@ export class EventService {
 					userId: user.id.toString(),
 					userEmail: user.email,
 					eventId: eventId.toString(),
+					eventTitle: event.title,
 					companyId: event.company.id.toString(),
 					ticketIds: tickets.map((t) => t.id).join(','),
 				}

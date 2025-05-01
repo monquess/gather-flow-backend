@@ -12,7 +12,9 @@ class EventSeeder extends Seeder {
 
 		const companies = await this.prisma.company.findMany();
 
-		const eventFactory = new EventFactory(20, companies);
+		const users = await this.prisma.user.findMany();
+
+		const eventFactory = new EventFactory(20, companies, users);
 
 		await this.prisma.event.createMany({
 			data: eventFactory.data,

@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	ForbiddenException,
 	forwardRef,
 	Inject,
@@ -96,14 +97,29 @@ export class CompanyService {
 	}
 
 	async findAll(
-		{ name }: CompanyFilteringOptionsDto,
+		{ name, userId }: CompanyFilteringOptionsDto,
 		{ page, limit }: PaginationOptionsDto
 	): Promise<Paginated<CompanyEntity>> {
 		const where: Prisma.CompanyWhereInput = {
-			name: {
-				contains: name,
-				mode: 'insensitive',
-			},
+			AND: [
+				{
+					name: {
+						contains: name,
+						mode: 'insensitive',
+					},
+				},
+				...(userId
+					? [
+							{
+								users: {
+									some: {
+										userId,
+									},
+								},
+							},
+						]
+					: []),
+			],
 		};
 
 		const [companies, count] = await this.prisma.$transaction([
@@ -254,6 +270,10 @@ export class CompanyService {
 	): Promise<EventEntity> {
 		const company = await this.checkIsCompanyAdmin(user.id, companyId);
 
+		if (!company?.stripeAccountId) {
+			throw new BadRequestException('Company does not have a connected Stripe account');
+		}
+
 		let posterUrl = this.config.defaults.poster;
 		if (poster) {
 			const { url } = await this.s3Service.uploadFile(StoragePath.POSTERS, poster);
@@ -265,6 +285,7 @@ export class CompanyService {
 				data: {
 					...dto,
 					companyId,
+					userId: user.id,
 					poster: posterUrl,
 					status: dto.publishDate ? EventStatus.DRAFT : EventStatus.PUBLISHED,
 					promocodes: {
@@ -370,6 +391,11 @@ export class CompanyService {
 	): Promise<EventEntity> {
 		await this.checkIsCompanyAdmin(user.id, companyId);
 		const event = await this.eventService.findById(eventId);
+
+		if (event.status === EventStatus.PUBLISHED) {
+			throw new BadRequestException('Cannot update published event');
+		}
+
 		let posterUrl = event.poster;
 
 		if (poster) {
@@ -455,6 +481,10 @@ export class CompanyService {
 
 	async removeEvent(companyId: number, eventId: number, user: User): Promise<void> {
 		const event = await this.eventService.findById(eventId);
+
+		if (event.status === EventStatus.PUBLISHED) {
+			throw new BadRequestException('Cannot remove published event');
+		}
 
 		await this.checkIsCompanyAdmin(user.id, companyId);
 
