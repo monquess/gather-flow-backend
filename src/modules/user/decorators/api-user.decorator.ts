@@ -28,7 +28,6 @@ export const ApiUserSelf = () =>
 
 export const ApiUserFindAll = () =>
 	applyDecorators(
-		ApiAuth(),
 		ApiOperation({ summary: 'Get all users' }),
 		ApiQuery({
 			name: 'username',
@@ -47,7 +46,6 @@ export const ApiUserFindAll = () =>
 
 export const ApiUserFindById = () =>
 	applyDecorators(
-		ApiAuth(),
 		ApiOperation({ summary: 'Get user by id' }),
 		ApiOkResponse({
 			type: UserEntity,

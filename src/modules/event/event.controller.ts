@@ -36,6 +36,7 @@ import {
 	ApiReminderCreate,
 	ApiReminderRemove,
 	ApiEventFindPromocode,
+	ApiEventAttendeeFindAll,
 } from './decorators/api-event.decorator';
 import { PromocodeEntity } from './entities/promocode.entity';
 import {
@@ -52,6 +53,7 @@ import { EventEntity } from './entities/event.entity';
 import { EventService } from './event.service';
 import { CreateReminderDto } from './dto/create-reminder.dto';
 import { ReminderEntity } from './entities/reminder.entity';
+import { UserEntity } from '@modules/user/entities/user.entity';
 
 @UseInterceptors(CacheInterceptor, ClassSerializerInterceptor)
 @Controller('events')
@@ -88,6 +90,17 @@ export class EventController {
 	@Get(':id')
 	findById(@Param('id', ParseIntPipe) id: number): Promise<EventEntity> {
 		return this.eventService.findById(id);
+	}
+
+	@ApiEventAttendeeFindAll()
+	@Public()
+	@Get(':id/attendees')
+	findEventAttendees(
+		@Param('id', ParseIntPipe) id: number,
+		@Query() paginationOptions: PaginationOptionsDto,
+		@CurrentUser() user?: User
+	): Promise<Paginated<UserEntity>> {
+		return this.eventService.findEventAttendees(id, paginationOptions, user);
 	}
 
 	@ApiEventCreateTicket()

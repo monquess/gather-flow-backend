@@ -5,7 +5,13 @@ import {
 	Injectable,
 	NotFoundException,
 } from '@nestjs/common';
-import { Prisma, User, EventStatus } from '@prisma/client';
+import {
+	Prisma,
+	User,
+	EventStatus,
+	VisitorsVisibility,
+	PaymentStatus,
+} from '@prisma/client';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { EventEntity } from './entities/event.entity';
 import { EventFilteringOptionsDto } from './dto/filtering-options.dto';
@@ -30,6 +36,7 @@ import { NewPromocodeNotification } from '@modules/notification/notifications/ne
 import { CreateReminderDto } from './dto/create-reminder.dto';
 import { ReminderEntity } from './entities/reminder.entity';
 import { ReminderNotification } from '@modules/notification/notifications/reminder.notification';
+import { UserEntity } from '@modules/user/entities/user.entity';
 
 @Injectable()
 export class EventService {
@@ -184,6 +191,72 @@ export class EventService {
 			})),
 			meta: getPaginationMeta(count, page, limit),
 		};
+	}
+
+	async findEventAttendees(
+		id: number,
+		{ page, limit }: PaginationOptionsDto,
+		user?: User
+	): Promise<Paginated<UserEntity>> {
+		const where: Prisma.UserWhereInput = {
+			tickets: {
+				some: {
+					eventId: id,
+					user: {
+						showAsAttendee: true,
+					},
+					payments: {
+						some: {
+							payment: {
+								status: PaymentStatus.COMPLETED,
+							},
+						},
+					},
+				},
+			},
+		};
+
+		const isAttendee = user ? await this.isAttendee(user.id, id) : false;
+		const event = await this.findById(id);
+
+		if (event.visitorsVisibility === VisitorsVisibility.VISITOR && !isAttendee) {
+			return {
+				data: [],
+				meta: getPaginationMeta(0, page, limit),
+			};
+		}
+
+		const [users, count] = await this.prisma.$transaction([
+			this.prisma.user.findMany({
+				where,
+				take: limit,
+				skip: limit * (page - 1),
+			}),
+			this.prisma.user.count({ where }),
+		]);
+
+		return {
+			data: users.map((u) => new UserEntity(u)),
+			meta: getPaginationMeta(count, page, limit),
+		};
+	}
+
+	private async isAttendee(userId: number, eventId: number) {
+		return (await this.prisma.ticket.findFirst({
+			where: {
+				userId,
+				eventId,
+				payments: {
+					some: {
+						payment: {
+							status: PaymentStatus.COMPLETED,
+						},
+					},
+				},
+			},
+		}))
+			? true
+			: false;
 	}
 
 	async createComment(

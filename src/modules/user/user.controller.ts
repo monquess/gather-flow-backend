@@ -29,7 +29,7 @@ import {
 } from './decorators/api-user.decorator';
 import { FilteringOptionsDto, UpdateUserDto, UpdatePasswordDto } from './dto';
 
-import { CurrentUser, UploadedImage } from '@common/decorators';
+import { CurrentUser, Public, UploadedImage } from '@common/decorators';
 import { CacheInterceptor } from '@common/interceptors/cache.interceptor';
 
 @UseInterceptors(CacheInterceptor, ClassSerializerInterceptor)
@@ -44,12 +44,14 @@ export class UserController {
 		return user;
 	}
 
+	@Public()
 	@ApiUserFindAll()
 	@Get()
 	findAll(@Query() filteringOptions: FilteringOptionsDto): Promise<UserEntity[]> {
 		return this.userService.findAll(filteringOptions);
 	}
 
+	@Public()
 	@ApiUserFindById()
 	@Get(':id')
 	findById(@Param('id', ParseIntPipe) id: number): Promise<UserEntity> {
@@ -57,41 +59,41 @@ export class UserController {
 	}
 
 	@ApiUserUpdate()
-	@Patch(':id')
+	@Patch()
 	update(
-		@Param('id', ParseIntPipe) id: number,
-		@Body() updateUserDto: UpdateUserDto
+		@Body() updateUserDto: UpdateUserDto,
+		@CurrentUser() user: User
 	): Promise<UserEntity> {
-		return this.userService.update(id, updateUserDto);
+		return this.userService.update(user.id, updateUserDto);
 	}
 
 	@ApiUserUpdatePassword()
-	@Patch(':id/updatePassword')
+	@Patch('updatePassword')
 	updatePassword(
-		@Param('id', ParseIntPipe) id: number,
-		@Body() updatePasswordDto: UpdatePasswordDto
+		@Body() updatePasswordDto: UpdatePasswordDto,
+		@CurrentUser() user: User
 	): Promise<UserEntity> {
-		return this.userService.updatePassword(id, updatePasswordDto);
+		return this.userService.updatePassword(user.id, updatePasswordDto);
 	}
 
 	@ApiUserUpdateAvatar()
-	@Patch(':id/avatar')
+	@Patch('avatar')
 	@UseInterceptors(FileInterceptor('avatar'))
 	updateAvatar(
-		@Param('id', ParseIntPipe) id: number,
 		@UploadedImage({
 			width: 400,
 			height: 400,
 		})
-		avatar: Express.Multer.File
+		avatar: Express.Multer.File,
+		@CurrentUser() user: User
 	): Promise<UserEntity> {
-		return this.userService.updateAvatar(id, avatar);
+		return this.userService.updateAvatar(user.id, avatar);
 	}
 
 	@ApiUserRemove()
 	@HttpCode(HttpStatus.NO_CONTENT)
-	@Delete(':id')
-	remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-		return this.userService.remove(id);
+	@Delete()
+	remove(@CurrentUser() user: User): Promise<void> {
+		return this.userService.remove(user.id);
 	}
 }

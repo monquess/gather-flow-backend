@@ -9,15 +9,16 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique @db.VarChar(255)
-  email     String   @unique @db.VarChar(255)
-  password  String?  @db.VarChar(60)
-  verified  Boolean  @default(false)
-  avatar    String   @db.VarChar(255)
-  provider  Provider @default(LOCAL)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id             Int      @id @default(autoincrement())
+  username       String   @unique @db.VarChar(255)
+  email          String   @unique @db.VarChar(255)
+  password       String?  @db.VarChar(60)
+  verified       Boolean  @default(false)
+  avatar         String   @db.VarChar(255)
+  showAsAttendee Boolean  @default(true)
+  provider       Provider @default(LOCAL)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   companies     CompanyMember[]
   comments      Comment[]

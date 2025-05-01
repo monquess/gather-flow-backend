@@ -19,6 +19,7 @@ import { ApiAuth } from '@common/decorators/swagger/api-auth.decorator';
 import { CreateEventTicketResponseDto } from '../dto/create-event-ticket-response.dto';
 import { PromocodeEntity } from '../entities/promocode.entity';
 import { ReminderEntity } from '../entities/reminder.entity';
+import { UserEntity } from '@modules/user/entities/user.entity';
 
 export const ApiEventFindAll = () =>
 	applyDecorators(
@@ -36,6 +37,19 @@ export const ApiEventFindById = () =>
 		ApiOkResponse({
 			type: EventEntity,
 		}),
+		ApiNotFoundResponse({
+			description: 'Event not found',
+		})
+	);
+
+export const ApiEventAttendeeFindAll = () =>
+	applyDecorators(
+		ApiOperation({ summary: 'Get event attendees' }),
+		ApiParam({
+			name: 'id',
+			description: 'event id',
+		}),
+		ApiPaginatedResponse<UserEntity>(UserEntity),
 		ApiNotFoundResponse({
 			description: 'Event not found',
 		})

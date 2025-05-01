@@ -40,6 +40,12 @@ export class UserEntity {
 	avatar: string;
 
 	@ApiProperty({
+		example: true,
+		type: Boolean,
+	})
+	showAsAttendee: boolean;
+
+	@ApiProperty({
 		example: '2025-03-09T16:17:53.019Z',
 		type: String,
 	})
