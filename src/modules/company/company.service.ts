@@ -97,14 +97,29 @@ export class CompanyService {
 	}
 
 	async findAll(
-		{ name }: CompanyFilteringOptionsDto,
+		{ name, userId }: CompanyFilteringOptionsDto,
 		{ page, limit }: PaginationOptionsDto
 	): Promise<Paginated<CompanyEntity>> {
 		const where: Prisma.CompanyWhereInput = {
-			name: {
-				contains: name,
-				mode: 'insensitive',
-			},
+			AND: [
+				{
+					name: {
+						contains: name,
+						mode: 'insensitive',
+					},
+				},
+				...(userId
+					? [
+							{
+								users: {
+									some: {
+										userId,
+									},
+								},
+							},
+						]
+					: []),
+			],
 		};
 
 		const [companies, count] = await this.prisma.$transaction([
