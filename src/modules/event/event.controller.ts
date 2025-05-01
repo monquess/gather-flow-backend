@@ -78,9 +78,9 @@ export class EventController {
 	@Get(':id/promocodes/:code')
 	findEventPromocode(
 		@Param('id', ParseIntPipe) id: number,
-		@Param('code') { code }: FindPromocodeDto
+		@Param() params: FindPromocodeDto
 	): Promise<PromocodeEntity> {
-		return this.eventService.findEventPromocode(id, code);
+		return this.eventService.findEventPromocode(id, params.code);
 	}
 
 	@ApiEventFindById()

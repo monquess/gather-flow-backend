@@ -72,3 +72,14 @@ export const ApiCommentRemove = () =>
 			description: 'Comment not found',
 		})
 	);
+
+export const ApiCommentReply = () =>
+	applyDecorators(
+		ApiOperation({ summary: 'Reply to comment by id' }),
+		ApiOkResponse({
+			type: CommentEntity,
+		}),
+		ApiNotFoundResponse({
+			description: 'Comment not found',
+		})
+	);
