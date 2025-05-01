@@ -5,10 +5,7 @@ import { Paginated } from '@common/pagination/paginated';
 import { TicketEntity } from './entities/ticket.entity';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
-import {
-	ApiTicketFindAll,
-	ApiTicketFindById,
-} from './decorators/api-ticket.decorator';
+import { ApiTicketFindAll, ApiTicketFindById } from './decorators/api-ticket.decorator';
 
 @Controller('tickets')
 export class TicketController {

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsInt, IsNotEmpty } from 'class-validator';
 
 export class CreateCompanySubscriptionDto {
@@ -8,6 +9,7 @@ export class CreateCompanySubscriptionDto {
 		required: true,
 	})
 	@IsNotEmpty()
+	@Transform(({ value }) => Number(value))
 	@IsInt()
 	readonly companyId: number;
 }
