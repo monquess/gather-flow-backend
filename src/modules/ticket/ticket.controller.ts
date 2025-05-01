@@ -5,7 +5,12 @@ import { Paginated } from '@common/pagination/paginated';
 import { TicketEntity } from './entities/ticket.entity';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
-import { ApiTicketFindAll, ApiTicketFindById } from './decorators/api-ticket.decorator';
+import {
+	ApiTicketFindAll,
+	ApiTicketFindById,
+	ApiTicketGetPdf,
+} from './decorators/api-ticket.decorator';
+import { TicketPdfDto } from './dto/ticket-pdf.dto';
 
 @Controller('tickets')
 export class TicketController {
@@ -27,5 +32,14 @@ export class TicketController {
 		@CurrentUser() user: User
 	): Promise<TicketEntity> {
 		return this.ticketService.findById(id, user);
+	}
+
+	@ApiTicketGetPdf()
+	@Get(':id/pdf')
+	async getTicketPdf(
+		@Param('id', ParseIntPipe) id: number,
+		@CurrentUser() user: User
+	): Promise<TicketPdfDto> {
+		return this.ticketService.getTicketPdf(id, user);
 	}
 }

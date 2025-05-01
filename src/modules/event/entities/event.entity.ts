@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer';
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { Prisma, Format, Theme, VisitorsVisibility } from '@prisma/client';
+import { Prisma, Format, Theme, VisitorsVisibility, EventStatus } from '@prisma/client';
 import { CompanyEntity } from '@modules/company/entities/company.entity';
 
 export class EventEntity {
@@ -89,6 +89,13 @@ export class EventEntity {
 		example: VisitorsVisibility.EVERYONE,
 	})
 	visitorsVisibility: VisitorsVisibility;
+
+	@ApiProperty({
+		type: String,
+		enum: EventStatus,
+		example: EventStatus.DRAFT,
+	})
+	status: EventStatus;
 
 	@ApiProperty({
 		type: String,

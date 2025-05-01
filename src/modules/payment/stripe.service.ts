@@ -77,7 +77,6 @@ export class StripeService {
 		const company = await this.companyService.findById(Number(metadata?.companyId));
 
 		if (!company?.stripeAccountId) {
-			// TODO: add check for stripe account id before creating event
 			throw new BadRequestException('Company does not have a connected Stripe account');
 		}
 
