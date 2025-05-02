@@ -7,11 +7,7 @@ class CompanyMemberFactory extends Factory<CompanyMember> {
 	private companies: Company[];
 	private existingPairs: Set<string>;
 
-	constructor(
-		count: number = 10,
-		users: User[] = [],
-		companies: Company[] = []
-	) {
+	constructor(count: number = 10, users: User[] = [], companies: Company[] = []) {
 		super(count);
 		this.users = users;
 		this.companies = companies;

@@ -33,7 +33,7 @@ class EventFactory extends Factory<Event> {
 
 			this._data.push({
 				title: faker.lorem.words({ min: 2, max: 5 }),
-				description: faker.lorem.sentences({ min: 1, max: 3 }),
+				description: faker.lorem.paragraphs({ min: 1, max: 3 }),
 				format: faker.helpers.enumValue(Format),
 				theme: faker.helpers.enumValue(Theme),
 				location: faker.location.country(),
