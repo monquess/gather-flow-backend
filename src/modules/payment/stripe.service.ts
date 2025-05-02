@@ -17,6 +17,7 @@ import { StripeConfig, stripeConfig } from '@modules/config/configs/stripe.confi
 import { AppConfig, appConfig } from '@modules/config/configs';
 import { NotificationService } from '@modules/notification/notification.service';
 import { NewAttendeeNotification } from '@modules/notification/notifications/new-attendee.notification';
+import { Response } from 'express';
 
 @Injectable()
 export class StripeService {
@@ -43,14 +44,18 @@ export class StripeService {
 	): Promise<ConnectStripeResponseDto> {
 		await this.companyService.checkIsCompanyAdmin(user.id, companyId);
 
-		const redirectUri = `${this.appConfig.clientUrl}/companies/success-connect`;
+		const redirectUri = `${this.appConfig.url}/api/v1/payments/stripe-callback`;
 		const stripeClientId = this.stripeConfig.clientId;
 		const stripeConnectUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${stripeClientId}&scope=read_write&redirect_uri=${redirectUri}&state=${companyId}`;
 
 		return { url: stripeConnectUrl };
 	}
 
-	async handleStripeOAuthCallback(code: string, companyId: number): Promise<void> {
+	async handleStripeOAuthCallback(
+		res: Response,
+		code: string,
+		companyId: number
+	): Promise<void> {
 		try {
 			const response = await this.stripe.oauth.token({
 				grant_type: 'authorization_code',
@@ -66,7 +71,12 @@ export class StripeService {
 					stripeAccountId,
 				},
 			});
-		} catch {
+
+			return res.redirect(
+				`${this.appConfig.clientUrl}/companies/${companyId}/success-connect`
+			);
+		} catch (error) {
+			console.log(error);
 			throw new BadRequestException('Failed to connect Stripe account');
 		}
 	}

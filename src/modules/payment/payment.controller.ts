@@ -7,6 +7,7 @@ import {
 	Query,
 	RawBodyRequest,
 	Req,
+	Res,
 } from '@nestjs/common';
 import { StripeService } from './stripe.service';
 import { Public } from '@common/decorators/public.decorator';
@@ -14,6 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { User } from '@prisma/client';
 import { ConnectStripeResponseDto } from './dto/connect-stripe-response.dto';
+import { Response } from 'express';
 
 @Controller('payments')
 export class PaymentController {
@@ -39,9 +41,10 @@ export class PaymentController {
 	@Public()
 	@Get('stripe-callback')
 	handleStripeCallback(
+		@Res({ passthrough: true }) res: Response,
 		@Query('code') code: string,
 		@Query('state', ParseIntPipe) companyId: number
 	): Promise<void> {
-		return this.stripeService.handleStripeOAuthCallback(code, companyId);
+		return this.stripeService.handleStripeOAuthCallback(res, code, companyId);
 	}
 }
