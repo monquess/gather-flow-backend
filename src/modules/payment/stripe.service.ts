@@ -43,7 +43,7 @@ export class StripeService {
 	): Promise<ConnectStripeResponseDto> {
 		await this.companyService.checkIsCompanyAdmin(user.id, companyId);
 
-		const redirectUri = `${this.appConfig.clientUrl}/companies/${companyId}/success-connect`;
+		const redirectUri = `${this.appConfig.clientUrl}/companies/success-connect?companyId=${companyId}`;
 		const stripeClientId = this.stripeConfig.clientId;
 		const stripeConnectUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${stripeClientId}&scope=read_write&redirect_uri=${redirectUri}&state=${companyId}`;
 
