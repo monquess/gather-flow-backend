@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Company } from '@prisma/client';
+import { Company, Prisma } from '@prisma/client';
 import Factory from './abstract.factory';
 
 class CompanyFactory extends Factory<Company> {
@@ -15,6 +15,10 @@ class CompanyFactory extends Factory<Company> {
 				description: faker.word.words({ count: { min: 0, max: 10 } }),
 				email: faker.internet.email(),
 				location: faker.location.country(),
+				rating: new Prisma.Decimal(
+					faker.number.float({ min: 1, max: 5, fractionDigits: 1 })
+				),
+				createdAt: faker.date.past({ years: 1, refDate: new Date() }),
 			} as Company);
 		}
 	}

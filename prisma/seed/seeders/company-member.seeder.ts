@@ -8,15 +8,13 @@ class CompanyMemberSeeder extends Seeder {
 	}
 
 	async run(): Promise<void> {
-		await this.prisma.companyMember.deleteMany();
-
 		const users = await this.prisma.user.findMany();
 		const companies = await this.prisma.company.findMany();
 
-		const companyMemberFactory = new CompanyMemberFactory(20, users, companies);
+		await this.prisma.companyMember.deleteMany();
 
 		await this.prisma.companyMember.createMany({
-			data: companyMemberFactory.data,
+			data: new CompanyMemberFactory(20, users, companies).data,
 		});
 	}
 }

@@ -8,10 +8,13 @@
   <img src="https://img.shields.io/badge/Postgres-316192?logo=postgresql&logoColor=fff" />
   <img src="https://img.shields.io/badge/Passport-34E27A?logo=passport&logoColor=fff" />
   <img src="https://img.shields.io/badge/Amazon_S3-232F3E?logo=amazonwebservices&logoColor=fff" />
+  <img src="https://img.shields.io/badge/Stripe-635BFF?logo=stripe&logoColor=fff" />
+  <img src="https://img.shields.io/badge/Elasticsearch-005571?logo=elastic&logoColor=fff" />
   <img src="https://img.shields.io/badge/OpenAPI-6BA539?logo=openapiinitiative&logoColor=fff" />    
   <img src="https://img.shields.io/badge/Swagger-85EA2D?logo=swagger&logoColor=fff" />
   <img src="https://img.shields.io/badge/Redis-DD0031?logo=redis&logoColor=fff" />
   <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff" />
+  <img src="https://img.shields.io/badge/Handlebars.js-000000?logo=handlebarsdotjs&logoColor=fff" />
 </div>
 
 ## Table of Contents
@@ -71,6 +74,7 @@ Once the containers are running, you can use the API directly from the Docker co
 REDIS_HOST=redis
 POSTGRES_HOST=postgres
 S3_ENDPOINT=http://minio:9000
+ELASTICSEARCH_NODE=http://elasticsearch:${ELASTICSEARCH_PORT}
 ```
 
 5. Install dependencies

@@ -10,10 +10,8 @@ class UserSeeder extends Seeder {
 	async run(): Promise<void> {
 		await this.prisma.user.deleteMany();
 
-		const userFactory = new UserFactory(10);
-
 		await this.prisma.user.createMany({
-			data: userFactory.data,
+			data: new UserFactory(20).data,
 		});
 	}
 }

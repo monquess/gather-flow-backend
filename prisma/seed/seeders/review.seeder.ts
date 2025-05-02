@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import Seeder from './abstract.seeder';
-import EventFactory from '../factories/event.factory';
+import ReviewFactory from '../factories/review.factory';
 
-class EventSeeder extends Seeder {
+class ReviewSeeder extends Seeder {
 	constructor(prisma: PrismaClient) {
 		super(prisma);
 	}
@@ -11,12 +11,12 @@ class EventSeeder extends Seeder {
 		const companies = await this.prisma.company.findMany();
 		const users = await this.prisma.user.findMany();
 
-		await this.prisma.event.deleteMany();
+		await this.prisma.review.deleteMany();
 
-		await this.prisma.event.createMany({
-			data: new EventFactory(companies.length * 5, companies, users).data,
+		await this.prisma.review.createMany({
+			data: new ReviewFactory(50, companies, users).data,
 		});
 	}
 }
 
-export default EventSeeder;
+export default ReviewSeeder;
