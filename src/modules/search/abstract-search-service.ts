@@ -43,7 +43,9 @@ export abstract class SearchService<T extends Document> {
 		await this.es.update({
 			index: this._index,
 			id: id.toString(),
-			body,
+			body: {
+				doc: body,
+			},
 		});
 	}
 

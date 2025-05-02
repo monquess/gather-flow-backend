@@ -1,7 +1,7 @@
 import { Paginated } from '@common/pagination/paginated';
 import { PaginationOptionsDto } from '@common/pagination/pagination-options.dto';
 import { PrismaService } from '@modules/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { TicketEntity } from './entities/ticket.entity';
 import { getPaginationMeta } from '@common/pagination/paginated-metadata';
 import { Prisma, User } from '@prisma/client';
@@ -9,10 +9,16 @@ import { v4 as uuidv4 } from 'uuid';
 import * as PDFDocument from 'pdfkit';
 import * as QRCode from 'qrcode';
 import { TicketPdfDto } from './dto/ticket-pdf.dto';
+import { AppConfig, appConfig } from '@modules/config/configs';
+import { ConfigType } from '@nestjs/config';
 
 @Injectable()
 export class TicketService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		@Inject(appConfig.KEY)
+		private readonly appConfig: ConfigType<AppConfig>
+	) {}
 
 	async findAll(
 		{ page, limit }: PaginationOptionsDto,
@@ -61,17 +67,13 @@ export class TicketService {
 			},
 		});
 		const event = ticket.event;
-		const qrCodeData = JSON.stringify({
-			ticketCode: ticket.ticketCode,
-			eventId: event.id,
-		});
+		const qrCodeData = `${this.appConfig.clientUrl}/events/${event.id}`;
 		const qrCodeImage = await QRCode.toDataURL(qrCodeData);
 		const qrCodeBuffer = Buffer.from(qrCodeImage.split(',')[1], 'base64');
 
 		return new Promise((resolve) => {
 			const doc = new PDFDocument({
-				size: 'A6',
-				margin: 20,
+				size: 'A4',
 			});
 			const buffers: Buffer[] = [];
 
@@ -85,28 +87,33 @@ export class TicketService {
 				});
 			});
 
-			doc.font('Helvetica-Bold');
+			const startY = 100;
+			const labelX = 70;
+			const valueX = 200;
+			const lineHeight = 100;
 
-			doc.fillColor('#333').fontSize(20).text(event.title, { align: 'center' });
+			doc.font('Helvetica-Bold').fontSize(20).fillColor('#4a4a4a');
 
-			doc.moveDown(0.5);
+			doc.text('EVENT', labelX, startY);
+			doc.text('LOCATION', labelX, startY + lineHeight);
 
-			doc
-				.fontSize(14)
-				.text(`Date: ${event.startDate.toLocaleDateString()}`)
-				.text(`Time: ${event.startDate.toLocaleTimeString()}`)
-				.text(`Location: ${event.location}`)
-				.text(`Ticket Code: ${ticket.ticketCode}`);
+			doc.text('TICKET CODE', valueX + 100, startY);
+			doc.text('DATE', valueX + 100, startY + lineHeight);
 
-			doc
-				.rect(doc.page.width - 100, doc.page.height - 100, 60, 60)
-				.stroke()
-				.fontSize(10)
-				.text('QR Code', doc.page.width - 95, doc.page.height - 90);
+			doc.font('Helvetica').fontSize(18).fillColor('#6e6e6e');
 
-			doc.image(qrCodeBuffer, doc.page.width - 100, doc.page.height - 100, {
-				width: 90,
-				height: 90,
+			doc.text(event.title, labelX, startY + 20);
+			doc.text(event.location, labelX, startY + lineHeight + 20);
+
+			doc.text(ticket.ticketCode, valueX + 100, startY + 20);
+			doc.text(
+				`${event.startDate.toLocaleDateString()} ${event.startDate.toLocaleTimeString()}`,
+				valueX + 100,
+				startY + lineHeight + 20
+			);
+
+			doc.image(qrCodeBuffer, doc.page.width - 200, doc.page.height - 200, {
+				width: 150,
 			});
 
 			doc.end();
