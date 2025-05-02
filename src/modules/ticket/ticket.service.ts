@@ -8,6 +8,7 @@ import { Prisma, User } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import * as PDFDocument from 'pdfkit';
 import * as QRCode from 'qrcode';
+import * as path from 'path';
 import { TicketPdfDto } from './dto/ticket-pdf.dto';
 import { AppConfig, appConfig } from '@modules/config/configs';
 import { ConfigType } from '@nestjs/config';
@@ -89,28 +90,36 @@ export class TicketService {
 
 			const startY = 100;
 			const labelX = 70;
-			const valueX = 200;
 			const lineHeight = 100;
 
-			doc.font('Helvetica-Bold').fontSize(20).fillColor('#4a4a4a');
+			doc.registerFont('Roboto', path.join(__dirname, 'fonts', 'Roboto-Regular.ttf'));
+			doc.registerFont('Roboto-Bold', path.join(__dirname, 'fonts', 'Roboto-Bold.ttf'));
 
-			doc.text('EVENT', labelX, startY);
-			doc.text('LOCATION', labelX, startY + lineHeight);
+			doc.font('Roboto-Bold').fontSize(20).fillColor('#4a4a4a');
 
-			doc.text('TICKET CODE', valueX + 100, startY);
-			doc.text('DATE', valueX + 100, startY + lineHeight);
+			doc.text('EVENT', labelX, startY, {
+				lineBreak: true,
+			});
+			doc.text('TICKET CODE', labelX, startY + lineHeight, {
+				lineBreak: true,
+			});
+			doc.text('DATE', labelX, startY + lineHeight * 2, {
+				lineBreak: true,
+			});
+			doc.text('LOCATION', labelX, startY + lineHeight * 3, {
+				lineBreak: true,
+			});
 
-			doc.font('Helvetica').fontSize(18).fillColor('#6e6e6e');
+			doc.font('Roboto').fontSize(18).fillColor('#6e6e6e');
 
 			doc.text(event.title, labelX, startY + 20);
-			doc.text(event.location, labelX, startY + lineHeight + 20);
-
-			doc.text(ticket.ticketCode, valueX + 100, startY + 20);
+			doc.text(ticket.ticketCode, labelX, startY + lineHeight + 20);
 			doc.text(
 				`${event.startDate.toLocaleDateString()} ${event.startDate.toLocaleTimeString()}`,
-				valueX + 100,
-				startY + lineHeight + 20
+				labelX,
+				startY + lineHeight * 2 + 20
 			);
+			doc.text(event.location, labelX, startY + lineHeight * 3 + 20);
 
 			doc.image(qrCodeBuffer, doc.page.width - 200, doc.page.height - 200, {
 				width: 150,

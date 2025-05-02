@@ -7,6 +7,10 @@
 			{
 				"include": "**/*.hbs",
 				"outDir": "dist/src"
+			},
+			{
+				"include": "**/*.ttf",
+				"outDir": "dist/src"
 			}
 		],
 		"watchAssets": true,
