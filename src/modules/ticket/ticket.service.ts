@@ -80,7 +80,8 @@ export class TicketService {
 				const pdfData = Buffer.concat(buffers);
 				resolve({
 					filename: `${ticket.ticketCode}.pdf`,
-					content: pdfData,
+					content: pdfData.toString('base64'),
+					encoding: 'base64',
 				});
 			});
 

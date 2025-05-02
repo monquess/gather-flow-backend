@@ -10,6 +10,14 @@ export class TicketPdfDto {
 	@ApiProperty({
 		type: String,
 		example: 'application/pdf',
+		format: 'base64',
 	})
-	content: Buffer;
+	content: string;
+
+	@ApiProperty({
+		type: String,
+		example: 'application/pdf',
+		format: 'base64',
+	})
+	encoding: string;
 }

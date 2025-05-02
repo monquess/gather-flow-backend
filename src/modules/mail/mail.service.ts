@@ -33,7 +33,14 @@ export class MailService {
 		return handlebars.compile(template)(context);
 	}
 
-	async sendMail({ to, subject, templateName, context, attachments }: SendMailOptions) {
+	async sendMail({
+		to,
+		subject,
+		templateName,
+		context,
+		attachments,
+		encoding,
+	}: SendMailOptions) {
 		const html = this.renderTemplate(templateName, context);
 
 		await this.transporter.sendMail({
@@ -41,6 +48,7 @@ export class MailService {
 			subject,
 			html,
 			attachments,
+			encoding,
 		});
 	}
 }
